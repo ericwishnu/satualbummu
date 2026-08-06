@@ -1,12 +1,16 @@
 import { NextResponse } from 'next/server'
 import { randomUUID } from 'crypto'
 import { getPool } from '@/lib/db'
+import { requireAdmin } from '@/lib/auth'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-// POST /api/albums — buat album baru
+// POST /api/albums — buat album baru (hanya admin)
 export async function POST(req) {
+  if (!requireAdmin(req)) {
+    return NextResponse.json({ error: 'Perlu login admin.' }, { status: 401 })
+  }
   try {
     const body = await req.json()
     const name = (body.name || '').trim()

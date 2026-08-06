@@ -8,6 +8,7 @@ Fitur:
 - Reveal serentak (foto disembunyikan sampai waktu yang ditentukan)
 - **Preset filter film** — satu look seragam untuk seluruh album
 - **Batas foto per tamu** (dicek di server)
+- **Portal admin** — hanya pemilik (punya password) yang bisa membuat & melihat semua album
 
 **Arsitektur (versi MySQL / VM sendiri):**
 - **Next.js** — tampilan + API routes (folder `app/api`)
@@ -53,7 +54,13 @@ DB_PORT=3306
 DB_USER=satualbum
 DB_PASSWORD=passwordmu
 DB_NAME=satualbummu
+
+ADMIN_PASSWORD=password_admin_kamu
+SESSION_SECRET=string_acak_panjang_bebas
+COOKIE_SECURE=0
 ```
+
+`ADMIN_PASSWORD` dipakai untuk masuk ke portal admin. `SESSION_SECRET` isi string acak apa saja (untuk menandatangani sesi login). `COOKIE_SECURE=0` aman untuk http; setelah situs pakai HTTPS, ubah ke `1`.
 
 ## Langkah 4 — Jalankan migration (bikin tabel)
 
@@ -71,7 +78,7 @@ Saat mengembangkan:
 npm run dev
 ```
 
-Buka http://localhost:3000. Alur: buat album → halaman "kelola" (QR & link) → buka link → ambil foto → galeri.
+Buka http://localhost:3000 → diarahkan ke halaman login admin. Alur: login → buat album → halaman "kelola" (QR & link) → bagikan link ke tamu → galeri.
 
 Untuk dipakai beneran di VM (mode produksi):
 
@@ -88,10 +95,19 @@ pm2 start "npm run start" --name satualbummu
 pm2 save
 ```
 
+## Akses admin & pembagian ke tamu
+
+Ada dua "sisi":
+
+- **Sisi admin (kamu).** Buka `/` atau `/admin` → diminta login pakai `ADMIN_PASSWORD`. Di sini kamu membuat album baru dan melihat **semua album** yang terkumpul (jumlah foto + tanggal). Hanya yang tahu password admin yang bisa membuat/mengubah album.
+- **Sisi tamu (umum).** Tamu memakai **link/QR album** langsung (`/a/<id>` untuk ambil foto, `/a/<id>/galeri` untuk galeri). Mereka **tidak perlu login** dan tidak bisa membuat album.
+
+Ganti password admin = cukup ubah `ADMIN_PASSWORD` di `.env.local` lalu restart aplikasi. Untuk memaksa semua sesi login ulang, ubah juga `SESSION_SECRET`.
+
 ## Langkah 6 — Domain, HTTPS & "CDN"
 
 - Pasang **nginx** sebagai reverse proxy ke `localhost:3000`, arahkan domainmu ke VM.
-- **HTTPS wajib** supaya kamera HP tamu mulus. Cara termudah: taruh **Cloudflare (gratis)** di depan domainmu — sekaligus memberi efek CDN (cache & percepatan) untuk foto tanpa mengubah kode. Alternatif: sertifikat gratis Let's Encrypt via nginx.
+- **HTTPS wajib** supaya kamera HP tamu mulus. Cara termudah: taruh **Cloudflare (gratis)** di depan domainmu — sekaligus memberi efek CDN (cache & percepatan) untuk foto tanpa mengubah kode. Alternatif: sertifikat gratis Let's Encrypt via nginx. Setelah HTTPS aktif, set `COOKIE_SECURE=1`.
 - Foto dilayani aplikasi lewat `/api/uploads/...` (dibaca dari folder `uploads/`). Kalau trafik besar, arahkan nginx menyajikan folder `uploads/` langsung, mis: `location /api/uploads/ { alias /path/ke/app/uploads/; }` (lebih ringan daripada lewat Node), dan/atau andalkan cache Cloudflare.
 
 ---
@@ -134,15 +150,21 @@ Di VM/produksi, setelah menarik kode terbaru cukup jalankan `npm run migrate` la
 
 ```
 app/
-  page.js                    → beranda: buat album
+  page.js                    → redirect ke /admin
+  login/page.js              → login admin
+  admin/page.js              → portal admin: buat album + daftar semua album
   a/[id]/page.js             → halaman ambil foto (di-scan tamu)
   a/[id]/galeri/page.js      → galeri + reveal + unduh semua
   a/[id]/kelola/page.js      → QR, statistik, pengaturan
-  api/albums/route.js               → POST buat album
-  api/albums/[id]/route.js          → GET album, PATCH pengaturan
+  api/albums/route.js               → POST buat album (admin)
+  api/albums/[id]/route.js          → GET album, PATCH pengaturan (admin)
   api/albums/[id]/photos/route.js   → GET daftar foto, POST unggah foto
   api/uploads/[...path]/route.js    → menyajikan file foto
+  api/admin/albums/route.js         → daftar semua album (admin)
+  api/auth/login/route.js           → login admin
+  api/auth/logout/route.js          → logout admin
 lib/db.js                    → koneksi MySQL (server)
+lib/auth.js                  → autentikasi admin
 lib/filmPresets.js           → preset & pemrosesan filter foto (browser)
 lib/uuid.js                  → uuid untuk browser (aman di HTTP)
 migrations/                  → file migration .sql bernomor (up/down)

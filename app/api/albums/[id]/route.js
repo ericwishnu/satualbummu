@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getPool } from '@/lib/db'
+import { requireAdmin } from '@/lib/auth'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -21,8 +22,11 @@ export async function GET(req, { params }) {
   }
 }
 
-// PATCH /api/albums/:id — ubah pengaturan (waktu reveal, batas foto)
+// PATCH /api/albums/:id — ubah pengaturan (waktu reveal, batas foto) — hanya admin
 export async function PATCH(req, { params }) {
+  if (!requireAdmin(req)) {
+    return NextResponse.json({ error: 'Perlu login admin.' }, { status: 401 })
+  }
   try {
     const body = await req.json()
     const revealAt = body.reveal_at ? new Date(body.reveal_at) : null
