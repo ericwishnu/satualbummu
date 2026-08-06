@@ -1,0 +1,3 @@
+-- Tidak dipakai lagi. Aplikasi ini sekarang memakai MySQL.
+-- Skema yang benar ada di: db/schema.sql
+-- Folder "supabase" ini boleh kamu hapus.
