@@ -73,11 +73,12 @@ export default function Gallery({ params }) {
     setZipping(false)
   }
 
-  if (loadingAlbum) return <p className="sub">Memuat…</p>
+  if (loadingAlbum) return <p className="sub" style={{ textAlign: 'center', marginTop: 40 }}>Memuat…</p>
   if (notFound || !album) {
     return (
-      <div>
-        <h1>Album tidak ditemukan</h1>
+      <div className="hero" style={{ marginTop: 40 }}>
+        <div className="hero-logo">📷</div>
+        <h1 className="hero-title">Album tidak ditemukan</h1>
       </div>
     )
   }
@@ -91,27 +92,33 @@ export default function Gallery({ params }) {
     const pad = (n) => String(n).padStart(2, '0')
     return (
       <div>
-        <h1>{album.name}</h1>
-        <div className="card countdown">
-          <p className="sub">📸 Foto masih di dalam &quot;roll&quot;. Akan dibuka pada:</p>
-          <div className="big">
-            {d > 0 ? `${d} hari ` : ''}{pad(h)}:{pad(m)}:{pad(s)}
+        <div className="hero">
+          <div className="hero-logo">🎞️</div>
+          <h1 className="hero-title">{album.name}</h1>
+          <p className="hero-sub">Foto masih di dalam &quot;roll&quot;. Semua akan dibuka bersamaan pada:</p>
+        </div>
+        <div className="card">
+          <div className="cd-grid">
+            <div className="cd-box"><div className="cd-num">{d}</div><div className="cd-lbl">Hari</div></div>
+            <div className="cd-box"><div className="cd-num">{pad(h)}</div><div className="cd-lbl">Jam</div></div>
+            <div className="cd-box"><div className="cd-num">{pad(m)}</div><div className="cd-lbl">Menit</div></div>
+            <div className="cd-box"><div className="cd-num">{pad(s)}</div><div className="cd-lbl">Detik</div></div>
           </div>
-          <p className="sub" style={{ marginTop: 16 }}>
+          <p className="sub" style={{ textAlign: 'center', margin: '14px 0 0', fontSize: 13 }}>
             {new Date(revealTime).toLocaleString('id-ID')}
           </p>
         </div>
-        <p className="sub" style={{ textAlign: 'center' }}>
-          <Link className="link" href={`/a/${albumId}`}>← Ambil foto</Link>
-        </p>
+        <Link className="btn secondary" href={`/a/${albumId}`}>← Ambil foto</Link>
       </div>
     )
   }
 
   return (
     <div>
-      <h1>{album.name}</h1>
-      <p className="sub">{photos.length} foto dari acara ini.</p>
+      <div className="page-head">
+        <h1 className="page-title">{album.name}</h1>
+        <p className="page-sub">{photos.length} foto terkumpul</p>
+      </div>
 
       {photos.length === 0 ? (
         <div className="card">
@@ -123,12 +130,12 @@ export default function Gallery({ params }) {
             {zipping ? 'Menyiapkan…' : `⬇ Unduh semua (${photos.length})`}
           </button>
           {zipMsg ? <div className="error">{zipMsg}</div> : null}
-          <div className="grid">
+          <div className="masonry">
             {photos.map((p) => (
-              <div className="tile" key={p.id}>
-                {p.uploader_name ? <span className="who">{p.uploader_name}</span> : null}
+              <div className="m-item" key={p.id}>
+                <a className="m-dl" href={p.storage_path} download title="Unduh">⬇</a>
                 <img src={p.storage_path} alt={p.uploader_name || 'foto'} loading="lazy" />
-                <a className="dl" href={p.storage_path} download>Unduh</a>
+                {p.uploader_name ? <span className="m-chip">{p.uploader_name}</span> : null}
               </div>
             ))}
           </div>

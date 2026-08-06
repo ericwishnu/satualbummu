@@ -28,6 +28,7 @@ export default function Capture({ params }) {
   const [uploading, setUploading] = useState(false)
   const [msg, setMsg] = useState('')
   const [err, setErr] = useState('')
+  const [sentThumbs, setSentThumbs] = useState([])
   const fileRef = useRef(null)
 
   const max = album && album.max_per_guest ? album.max_per_guest : null
@@ -87,6 +88,7 @@ export default function Capture({ params }) {
 
     const preset = (album && album.film_preset) || DEFAULT_PRESET
     let ok = 0
+    const newThumbs = []
     for (const file of files) {
       try {
         const processed = await processImage(file, preset)
@@ -95,8 +97,10 @@ export default function Capture({ params }) {
         fd.append('uploader_name', name.trim())
         fd.append('guest_id', guestId)
         const res = await fetch(`/api/albums/${albumId}/photos`, { method: 'POST', body: fd })
-        if (res.ok) ok++
-        else {
+        if (res.ok) {
+          ok++
+          try { newThumbs.push(URL.createObjectURL(processed)) } catch (e) {}
+        } else {
           const d = await res.json().catch(() => ({}))
           setErr(d.error || 'Gagal upload sebagian foto.')
         }
@@ -106,16 +110,18 @@ export default function Capture({ params }) {
     }
     setUploading(false)
     setUsed((c) => c + ok)
-    if (ok > 0 && !msg) setMsg(`${ok} foto terkirim! 📷`)
+    if (newThumbs.length) setSentThumbs((prev) => [...prev, ...newThumbs])
+    if (ok > 0 && !msg) setMsg(`${ok} foto terkirim! 🎉`)
     if (fileRef.current) fileRef.current.value = ''
   }
 
-  if (loading) return <p className="sub">Memuat…</p>
+  if (loading) return <p className="sub" style={{ textAlign: 'center', marginTop: 40 }}>Memuat…</p>
   if (!album) {
     return (
-      <div>
-        <h1>Album tidak ditemukan</h1>
-        <p className="sub">Link mungkin salah, atau album sudah dihapus.</p>
+      <div className="hero" style={{ marginTop: 40 }}>
+        <div className="hero-logo">📷</div>
+        <h1 className="hero-title">Album tidak ditemukan</h1>
+        <p className="hero-sub">Link mungkin salah, atau album sudah dihapus.</p>
       </div>
     )
   }
@@ -124,8 +130,13 @@ export default function Capture({ params }) {
 
   return (
     <div>
-      <h1>{album.name}</h1>
-      <p className="sub">Ambil foto untuk album ini. Fotonya akan tergabung dengan jepretan tamu lain.</p>
+      <div className="hero">
+        <div className="hero-logo">📷</div>
+        <h1 className="hero-title">{album.name}</h1>
+        <p className="hero-sub">
+          Ambil momen dari acara ini. Fotomu akan tergabung dan muncul bareng-bareng di galeri.
+        </p>
+      </div>
 
       <div className="card">
         <label>Namamu</label>
@@ -141,44 +152,46 @@ export default function Capture({ params }) {
           id="cam"
           type="file"
           accept="image/*"
-          capture="environment"
           multiple
-          disabled={limitReached}
+          disabled={limitReached || uploading}
           onChange={handleFiles}
           style={{ display: 'none' }}
         />
-        <label
-          htmlFor="cam"
-          className="btn"
-          style={{
-            cursor: uploading || limitReached ? 'not-allowed' : 'pointer',
-            opacity: limitReached ? 0.5 : 1,
-          }}
-        >
-          {limitReached ? 'Jatah foto habis' : uploading ? 'Mengunggah…' : '📷 Ambil / pilih foto'}
+        <label htmlFor="cam" className={`capture-tile ${limitReached ? 'disabled' : ''}`}>
+          <span className="ic">{limitReached ? '🚫' : '📸'}</span>
+          <span>{limitReached ? 'Jatah foto habis' : uploading ? 'Mengunggah…' : 'Ambil / Pilih Foto'}</span>
+          {!limitReached && !uploading ? (
+            <span className="hint">Dari kamera atau galeri • bisa banyak sekaligus</span>
+          ) : null}
         </label>
 
-        {presetLabel ? (
-          <p className="sub" style={{ marginTop: 12, fontSize: 13, textAlign: 'center' }}>
-            Filter album: <strong>{presetLabel}</strong>
-          </p>
-        ) : null}
-
-        {err ? <div className="error">{err}</div> : null}
-        {msg ? <div className="ok">{msg}</div> : null}
-
-        <p style={{ marginTop: 14, textAlign: 'center' }}>
+        <div className="badgerow">
+          {presetLabel ? <span className="count-pill">🎞️ {presetLabel}</span> : null}
           {max != null ? (
-            <span className="count-pill">Sisa jatah: {remaining} dari {max} foto</span>
+            <span className="count-pill">Sisa jatah: {remaining}/{max}</span>
           ) : used > 0 ? (
-            <span className="count-pill">Kamu sudah kirim {used} foto</span>
+            <span className="count-pill">Terkirim: {used}</span>
           ) : null}
-        </p>
+        </div>
+
+        {err ? <div className="error" style={{ textAlign: 'center' }}>{err}</div> : null}
+        {msg ? <div className="ok" style={{ textAlign: 'center' }}>{msg}</div> : null}
+
+        {sentThumbs.length > 0 ? (
+          <>
+            <p className="sub" style={{ fontSize: 13, marginTop: 18, marginBottom: 0, textAlign: 'center' }}>
+              Foto yang kamu kirim
+            </p>
+            <div className="sent-grid">
+              {sentThumbs.slice(-8).map((u, i) => (
+                <img key={i} src={u} alt="" />
+              ))}
+            </div>
+          </>
+        ) : null}
       </div>
 
-      <p className="sub" style={{ textAlign: 'center' }}>
-        <Link className="link" href={`/a/${albumId}/galeri`}>Lihat galeri →</Link>
-      </p>
+      <Link className="btn secondary" href={`/a/${albumId}/galeri`}>Lihat galeri →</Link>
     </div>
   )
 }

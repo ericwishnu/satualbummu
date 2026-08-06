@@ -14,6 +14,8 @@ html, body {
   margin: 0;
   padding: 0;
   background: var(--bg);
+  background: radial-gradient(1100px 620px at 50% -12%, #211a14 0%, var(--bg) 60%);
+  background-attachment: fixed;
   color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -42,15 +44,27 @@ label { display: block; font-size: 13px; color: var(--muted); margin: 12px 0 6px
 input[type="text"],
 input[type="number"],
 input[type="datetime-local"],
+input[type="password"],
+input[type="email"],
 select {
   width: 100%;
-  padding: 12px 14px;
+  padding: 13px 14px;
   background: #14110f;
   border: 1px solid var(--line);
   border-radius: 10px;
   color: var(--text);
   font-size: 16px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
+
+input:focus,
+select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(232, 176, 75, 0.18);
+}
+
+input::placeholder { color: #6f645a; }
 
 .btn {
   display: inline-flex;
@@ -136,3 +150,156 @@ select {
 }
 .stat-num { font-size: 30px; font-weight: 800; color: var(--accent); }
 .stat-lbl { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+/* --- Halaman login (auth) --- */
+.auth-wrap {
+  min-height: 78vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.auth-card {
+  width: 100%;
+  max-width: 380px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 36px 28px 30px;
+  text-align: center;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.5);
+}
+.auth-logo {
+  width: 66px;
+  height: 66px;
+  margin: 0 auto 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  border-radius: 20px;
+  background: linear-gradient(145deg, var(--accent), var(--accent-dark));
+  box-shadow: 0 10px 26px rgba(232, 176, 75, 0.35);
+}
+.auth-title { font-size: 24px; margin: 0 0 4px; letter-spacing: -0.5px; }
+.auth-tagline { color: var(--muted); font-size: 14px; margin: 0 0 26px; }
+.auth-form { text-align: left; }
+.auth-form label:first-child { margin-top: 0; }
+.auth-foot { color: var(--muted); font-size: 12px; margin: 20px 0 0; }
+
+/* --- Halaman ambil foto tamu --- */
+.hero { text-align: center; padding: 6px 0 2px; }
+.hero-logo {
+  width: 56px; height: 56px; margin: 0 auto 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px; border-radius: 16px;
+  background: linear-gradient(145deg, var(--accent), var(--accent-dark));
+  box-shadow: 0 8px 22px rgba(232, 176, 75, 0.32);
+}
+.hero-title { font-size: 22px; margin: 0 0 5px; letter-spacing: -0.3px; }
+.hero-sub { color: var(--muted); font-size: 14px; margin: 0 auto; max-width: 340px; line-height: 1.45; }
+
+.capture-tile {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 6px; width: 100%; padding: 26px 18px; margin-top: 4px;
+  border: none; border-radius: 16px;
+  background: linear-gradient(145deg, var(--accent), var(--accent-dark));
+  color: #201a10; font-weight: 800; font-size: 18px; cursor: pointer;
+  box-shadow: 0 10px 26px rgba(232, 176, 75, 0.30);
+  transition: transform 0.08s ease, box-shadow 0.15s ease;
+}
+.capture-tile:active { transform: scale(0.99); }
+.capture-tile .ic { font-size: 30px; line-height: 1; }
+.capture-tile .hint { font-size: 12px; font-weight: 600; opacity: 0.78; }
+.capture-tile.disabled {
+  background: #2a2420; color: var(--muted); box-shadow: none; cursor: not-allowed;
+}
+
+.badgerow { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 14px; }
+
+.sent-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 12px; }
+.sent-grid img {
+  width: 100%; aspect-ratio: 1; object-fit: cover;
+  border-radius: 8px; border: 1px solid var(--line);
+}
+
+/* --- Portal admin --- */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; margin-bottom: 18px;
+}
+.topbar .brandmark { display: flex; align-items: center; gap: 10px; }
+.topbar .mark {
+  width: 40px; height: 40px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center; font-size: 21px;
+  background: linear-gradient(145deg, var(--accent), var(--accent-dark));
+  box-shadow: 0 6px 16px rgba(232, 176, 75, 0.30);
+}
+.topbar .brandname { font-weight: 800; font-size: 18px; line-height: 1.1; }
+.topbar .brandrole { color: var(--muted); font-size: 11px; margin-top: 2px; }
+.btn-ghost {
+  width: auto; margin-top: 0; padding: 9px 15px; font-size: 14px; font-weight: 700;
+  background: transparent; color: var(--accent); border: 1px solid var(--line);
+  border-radius: 10px; cursor: pointer;
+}
+.btn-ghost:hover { border-color: var(--accent); }
+
+.album-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap;
+  padding: 14px; border: 1px solid var(--line); border-radius: 12px;
+  background: #14110f; margin-top: 10px;
+}
+.album-row .a-info { flex: 1 1 auto; min-width: 55%; }
+.album-row .a-name { font-weight: 700; font-size: 15px; }
+.album-row .a-meta {
+  color: var(--muted); font-size: 12px; margin-top: 4px;
+  display: flex; flex-wrap: wrap; gap: 4px 10px;
+}
+.album-actions { display: flex; gap: 8px; flex: 0 0 auto; }
+.btn-sm {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 8px 13px; border-radius: 9px; font-size: 13px; font-weight: 700;
+  text-decoration: none; white-space: nowrap;
+  border: 1px solid var(--accent); color: var(--accent); background: transparent;
+}
+.btn-sm.solid { background: var(--accent); color: #201a10; }
+.section-title { font-size: 18px; margin: 0 0 12px; }
+
+/* --- Galeri (photo wall) --- */
+.page-head { margin: 4px 0 16px; }
+.page-title { font-size: 24px; margin: 0 0 4px; letter-spacing: -0.4px; }
+.page-sub { color: var(--muted); font-size: 14px; margin: 0; }
+
+.masonry { column-count: 2; column-gap: 10px; margin-top: 16px; }
+@media (min-width: 560px) { .masonry { column-count: 3; } }
+.m-item {
+  position: relative; break-inside: avoid; margin-bottom: 10px;
+  border-radius: 14px; overflow: hidden; border: 1px solid var(--line); background: #0d0b09;
+}
+.m-item img { width: 100%; display: block; }
+.m-chip {
+  position: absolute; left: 8px; bottom: 8px;
+  background: rgba(0, 0, 0, 0.55); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  color: #fff; font-size: 11px; padding: 4px 9px; border-radius: 20px;
+}
+.m-dl {
+  position: absolute; right: 8px; top: 8px;
+  width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+  background: rgba(0, 0, 0, 0.5); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  color: #fff; border-radius: 10px; text-decoration: none; font-size: 15px;
+}
+
+/* --- Hitung mundur reveal (tiles) --- */
+.cd-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 10px 0 4px; }
+.cd-box { background: #14110f; border: 1px solid var(--line); border-radius: 14px; padding: 16px 6px; text-align: center; }
+.cd-num { font-size: 30px; font-weight: 800; color: var(--accent); font-variant-numeric: tabular-nums; line-height: 1; }
+.cd-lbl { font-size: 10px; color: var(--muted); margin-top: 6px; text-transform: uppercase; letter-spacing: 0.6px; }
+
+/* --- Kelola --- */
+.qr-frame { background: #fff; border-radius: 18px; padding: 20px; display: flex; justify-content: center; }
+.copyrow { display: flex; gap: 8px; align-items: stretch; }
+.copyrow .mono {
+  flex: 1; margin: 0; padding: 12px 14px; background: #14110f;
+  border: 1px solid var(--line); border-radius: 10px; display: flex; align-items: center;
+}
+.copyrow .btn { width: auto; margin-top: 0; padding: 0 16px; white-space: nowrap; }

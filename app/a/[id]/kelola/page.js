@@ -115,28 +115,27 @@ export default function Kelola({ params }) {
 
   return (
     <div>
-      <h1>{album ? album.name : 'Album'}</h1>
-      <p className="sub">Bagikan QR atau link ini ke tamu. Mereka tinggal scan lalu langsung motret.</p>
+      <div className="page-head">
+        <h1 className="page-title">{album ? album.name : 'Album'}</h1>
+        <p className="page-sub">Bagikan ke tamu — mereka scan lalu langsung motret.</p>
+      </div>
 
       <div className="card">
-        <div className="qrbox" ref={qrWrapRef}>
-          {captureUrl ? <QRCodeCanvas value={captureUrl} size={220} includeMargin /> : null}
+        <div className="qr-frame" ref={qrWrapRef}>
+          {captureUrl ? <QRCodeCanvas value={captureUrl} size={210} includeMargin /> : null}
         </div>
-        <button className="btn secondary" onClick={downloadQR} style={{ marginTop: 14 }}>
+        <label>Link untuk tamu</label>
+        <div className="copyrow">
+          <span className="mono">{captureUrl || '…'}</span>
+          <button className="btn" onClick={copyLink}>{copied ? '✓' : 'Salin'}</button>
+        </div>
+        <button className="btn secondary" onClick={downloadQR} style={{ marginTop: 10 }}>
           ⬇ Unduh QR (PNG)
         </button>
       </div>
 
       <div className="card">
-        <label>Link untuk tamu</label>
-        <p className="mono">{captureUrl || '…'}</p>
-        <button className="btn" onClick={copyLink}>
-          {copied ? '✓ Tersalin' : 'Salin link'}
-        </button>
-      </div>
-
-      <div className="card">
-        <h2>Statistik</h2>
+        <h2 className="section-title">Statistik</h2>
         <div className="statrow">
           <div className="stat">
             <div className="stat-num">{loadingStats ? '…' : total}</div>
@@ -166,7 +165,7 @@ export default function Kelola({ params }) {
       </div>
 
       <div className="card">
-        <h2>Pengaturan</h2>
+        <h2 className="section-title">Pengaturan</h2>
         <p className="sub" style={{ fontSize: 13 }}>Filter foto album ini: <strong>{presetLabel}</strong></p>
         <form onSubmit={saveSettings}>
           <label>Foto dibuka pada (kosongkan = langsung tampil)</label>
@@ -197,7 +196,7 @@ export default function Kelola({ params }) {
       </div>
 
       <p className="sub" style={{ textAlign: 'center' }}>
-        <Link className="link" href="/">← Kembali</Link>
+        <Link className="link" href="/admin">← Kembali ke admin</Link>
       </p>
     </div>
   )

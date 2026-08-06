@@ -33,11 +33,13 @@ export default function Login() {
   }
 
   return (
-    <div>
-      <h1><span className="brand">SatuAlbumMu</span></h1>
-      <p className="sub">Masuk sebagai admin untuk mengelola album.</p>
-      <div className="card">
-        <form onSubmit={submit}>
+    <div className="auth-wrap">
+      <div className="auth-card">
+        <div className="auth-logo">📷</div>
+        <h1 className="auth-title">SatuAlbumMu</h1>
+        <p className="auth-tagline">Kamera sekali pakai digital untuk acaramu</p>
+
+        <form onSubmit={submit} className="auth-form">
           <label>Password admin</label>
           <input
             type="password"
@@ -51,6 +53,8 @@ export default function Login() {
             {loading ? 'Memeriksa…' : 'Masuk'}
           </button>
         </form>
+
+        <p className="auth-foot">Masuk untuk membuat &amp; mengelola album</p>
       </div>
     </div>
   )

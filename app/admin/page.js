@@ -81,18 +81,34 @@ export default function Admin() {
     }
   }
 
+  const totalPhotos = albums.reduce((s, a) => s + (Number(a.photo_count) || 0), 0)
+
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1 style={{ margin: 0 }}><span className="brand">Admin</span></h1>
-        <button className="btn secondary" style={{ width: 'auto', marginTop: 0, padding: '8px 14px' }} onClick={logout}>
-          Keluar
-        </button>
+      <div className="topbar">
+        <div className="brandmark">
+          <div className="mark">📷</div>
+          <div>
+            <div className="brandname">SatuAlbumMu</div>
+            <div className="brandrole">Panel admin</div>
+          </div>
+        </div>
+        <button className="btn-ghost" onClick={logout}>Keluar</button>
       </div>
-      <p className="sub" style={{ marginTop: 8 }}>Buat album baru dan lihat semua album yang terkumpul.</p>
+
+      <div className="statrow" style={{ marginBottom: 16 }}>
+        <div className="stat">
+          <div className="stat-num">{loading ? '…' : albums.length}</div>
+          <div className="stat-lbl">Album</div>
+        </div>
+        <div className="stat">
+          <div className="stat-num">{loading ? '…' : totalPhotos}</div>
+          <div className="stat-lbl">Total foto</div>
+        </div>
+      </div>
 
       <div className="card">
-        <h2>Buat album baru</h2>
+        <h2 className="section-title">Buat album baru</h2>
         <form onSubmit={createAlbum}>
           <label>Nama acara</label>
           <input type="text" placeholder="Ulang Tahun ke-30 / Trip Bali" value={name} onChange={(e) => setName(e.target.value)} />
@@ -112,32 +128,32 @@ export default function Admin() {
 
           {error ? <div className="error">{error}</div> : null}
           <button className="btn" type="submit" disabled={saving}>
-            {saving ? 'Membuat…' : 'Buat album'}
+            {saving ? 'Membuat…' : '＋ Buat album'}
           </button>
         </form>
       </div>
 
       <div className="card">
-        <h2>Semua album ({loading ? '…' : albums.length})</h2>
+        <h2 className="section-title">Semua album {loading ? '' : `(${albums.length})`}</h2>
         {loading ? (
           <p className="sub" style={{ margin: 0 }}>Memuat…</p>
         ) : albums.length === 0 ? (
           <p className="sub" style={{ margin: 0 }}>Belum ada album. Buat yang pertama di atas.</p>
         ) : (
           albums.map((a) => (
-            <div className="mine-item" key={a.id}>
-              <span>
-                <strong>{a.name}</strong>
-                <br />
-                <span className="sub" style={{ fontSize: 12 }}>
-                  {a.photo_count} foto · {fmtDate(a.created_at)}
-                </span>
-              </span>
-              <span>
-                <Link href={`/a/${a.id}/kelola`}>Kelola</Link>
-                {' · '}
-                <Link href={`/a/${a.id}/galeri`}>Galeri</Link>
-              </span>
+            <div className="album-row" key={a.id}>
+              <div className="a-info">
+                <div className="a-name">{a.name}</div>
+                <div className="a-meta">
+                  <span>📷 {a.photo_count} foto</span>
+                  <span>{fmtDate(a.created_at)}</span>
+                  <span>🎞️ {FILM_PRESETS[a.film_preset]?.label || a.film_preset}</span>
+                </div>
+              </div>
+              <div className="album-actions">
+                <Link className="btn-sm solid" href={`/a/${a.id}/kelola`}>Kelola</Link>
+                <Link className="btn-sm" href={`/a/${a.id}/galeri`}>Galeri</Link>
+              </div>
             </div>
           ))
         )}
