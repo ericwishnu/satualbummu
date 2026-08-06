@@ -17,6 +17,14 @@ export default async function RootLayout({ children }) {
   const css = `:root{--accent:${s.accent};--accent-dark:${s.accent_dark};}`
   return (
     <html lang="id">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600;1,700&family=Dancing+Script:wght@600;700&display=swap"
+        />
+      </head>
       <body>
         <style dangerouslySetInnerHTML={{ __html: css }} />
         <BrandProvider brand={{ name: s.brand_name, logo: s.logo_path, logoText: s.logo_text }}>

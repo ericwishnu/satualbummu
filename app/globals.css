@@ -314,6 +314,257 @@ input::placeholder { color: #6b6b70; }
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 }
 
+/* --- Background acara (per album) --- */
+.event-bg {
+  position: fixed; inset: 0; z-index: -1;
+  background-size: cover; background-position: center; background-repeat: no-repeat;
+}
+.event-bg::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.55) 45%, rgba(0,0,0,0.25) 100%);
+}
+
+/* --- Font Google (elegan) --- */
+.font-serif { font-family: 'Playfair Display', Georgia, 'Times New Roman', serif; }
+.font-script { font-family: 'Dancing Script', 'Segoe Script', cursive; }
+
+/* --- Halaman tamu elegan (referensi undangan) --- */
+.ev {
+  position: relative;
+  min-height: 100vh;
+  margin: -24px -18px -60px;   /* keluar dari padding .container */
+  padding: 0 0 48px;
+  overflow: hidden;
+}
+.ev-hero {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 62vh;
+  z-index: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-color: #0a0a0b;
+}
+.ev-hero::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg,
+    rgba(10,10,11,0.15) 0%,
+    rgba(10,10,11,0.35) 42%,
+    rgba(10,10,11,0.85) 72%,
+    var(--bg) 100%);
+}
+.ev-hero.noimg {
+  background: radial-gradient(120% 90% at 50% 0%, #26262a 0%, #131315 55%, var(--bg) 100%);
+}
+
+.ev-body {
+  position: relative;
+  z-index: 1;
+  max-width: 460px;
+  margin: 0 auto;
+  padding: 0 22px;
+  text-align: center;
+}
+.ev-spacer { height: 40vh; }
+
+.ev-kicker {
+  font-size: 12px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: rgba(244,244,245,0.72);
+  margin-bottom: 12px;
+}
+.ev-title {
+  font-size: 42px;
+  line-height: 1.08;
+  font-weight: 700;
+  margin: 0 0 10px;
+  color: #fff;
+  text-shadow: 0 2px 26px rgba(0,0,0,0.55);
+}
+.ev-sub {
+  font-size: 15px;
+  color: rgba(244,244,245,0.82);
+  margin: 0 auto 4px;
+  max-width: 330px;
+  line-height: 1.5;
+}
+
+/* baris statistik */
+.ev-stats {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  gap: 0;
+  margin: 26px auto 6px;
+}
+.ev-stat { flex: 1; padding: 4px 6px; }
+.ev-stat-num {
+  font-size: 24px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.ev-stat-lbl {
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: rgba(244,244,245,0.6);
+  margin-top: 5px;
+}
+.ev-div { width: 1px; background: rgba(244,244,245,0.16); margin: 4px 0; }
+
+/* kartu aksi (nama + tombol) */
+.ev-panel {
+  margin: 26px auto 0;
+  max-width: 420px;
+}
+.ev-name {
+  width: 100%;
+  padding: 14px 16px;
+  background: rgba(20,20,22,0.72);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(244,244,245,0.18);
+  border-radius: 12px;
+  color: var(--text);
+  font-size: 16px;
+  text-align: center;
+  margin-bottom: 12px;
+}
+.ev-name:focus {
+  outline: none;
+  border-color: rgba(244,244,245,0.55);
+  box-shadow: 0 0 0 3px rgba(255,255,255,0.12);
+}
+.ev-name::placeholder { color: rgba(244,244,245,0.5); }
+
+.ev-actions { display: flex; gap: 10px; }
+.ev-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px 18px;
+  border-radius: 14px;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.ev-btn.primary {
+  background: #fff;
+  color: #17171a;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.45);
+}
+.ev-btn.primary:active { transform: scale(0.99); }
+.ev-btn.ghost {
+  flex: 0 0 auto;
+  width: 56px;
+  background: rgba(20,20,22,0.72);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(244,244,245,0.2);
+  color: #fff;
+  font-size: 22px;
+}
+.ev-btn.disabled {
+  background: #242427; color: var(--muted);
+  box-shadow: none; cursor: not-allowed; pointer-events: none;
+}
+.ev-btn svg { display: block; }
+.ev-hint {
+  font-size: 12px;
+  color: rgba(244,244,245,0.6);
+  margin-top: 12px;
+}
+
+/* reveal countdown */
+.ev-reveal {
+  margin: 30px auto 0;
+  padding-top: 24px;
+  border-top: 1px solid rgba(244,244,245,0.12);
+  max-width: 420px;
+}
+.ev-reveal-lbl {
+  font-size: 12px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: rgba(244,244,245,0.62);
+  margin-bottom: 8px;
+}
+.ev-reveal-num {
+  font-size: 34px;
+  font-weight: 700;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 1px;
+}
+
+/* strip polaroid foto terkirim */
+.ev-sent-lbl {
+  font-size: 12px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: rgba(244,244,245,0.62);
+  margin: 34px 0 14px;
+}
+.ev-polas {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 14px;
+}
+.ev-pola {
+  background: #fbfbf8;
+  padding: 8px 8px 0;
+  border-radius: 3px;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.45);
+  width: 108px;
+  transform: rotate(-2deg);
+}
+.ev-pola:nth-child(even) { transform: rotate(2deg); }
+.ev-pola img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  display: block;
+  background: #eee;
+}
+.ev-pola-cap {
+  font-size: 15px;
+  color: #2a2622;
+  text-align: center;
+  padding: 7px 2px 9px;
+  line-height: 1;
+}
+
+.ev-badges { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 16px; }
+.ev-badge {
+  display: inline-block;
+  background: rgba(20,20,22,0.6);
+  border: 1px solid rgba(244,244,245,0.18);
+  color: rgba(244,244,245,0.85);
+  padding: 6px 13px;
+  border-radius: 20px;
+  font-size: 13px;
+}
+
+.ev-gallery-link {
+  display: inline-block;
+  margin-top: 30px;
+  color: rgba(244,244,245,0.82);
+  text-decoration: none;
+  font-size: 14px;
+  border-bottom: 1px solid rgba(244,244,245,0.3);
+  padding-bottom: 2px;
+}
+
 /* --- Kartu QR siap cetak --- */
 .print-card {
   background: #ffffff; color: #1a1712; border-radius: 20px;
@@ -339,14 +590,4 @@ input::placeholder { color: #6b6b70; }
   html, body { background: #ffffff !important; }
   .container { padding: 0 !important; max-width: none !important; }
   .print-card { margin: 0 auto; border: none; }
-}
-
-/* --- Background acara (per album) --- */
-.event-bg {
-  position: fixed; inset: 0; z-index: -1;
-  background-size: cover; background-position: center; background-repeat: no-repeat;
-}
-.event-bg::after {
-  content: ''; position: absolute; inset: 0;
-  background: linear-gradient(180deg, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.55) 45%, rgba(0,0,0,0.25) 100%);
 }
