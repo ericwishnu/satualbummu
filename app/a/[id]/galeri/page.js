@@ -6,6 +6,7 @@ import JSZip from 'jszip'
 import { revealTimestamp } from '@/lib/reveal'
 import { clientUUID } from '@/lib/uuid'
 import { toPolaroidBlob } from '@/lib/polaroid'
+import { BrandLogo } from '@/components/BrandProvider'
 
 function getGuestId() {
   try {
@@ -30,9 +31,15 @@ export default function Gallery({ params }) {
   const [gid, setGid] = useState('')
   const [zipping, setZipping] = useState(false)
   const [msg, setMsg] = useState('')
+  const [viewerName, setViewerName] = useState('')
+  const [nameReady, setNameReady] = useState(false)
 
   useEffect(() => {
     setGid(getGuestId())
+    try {
+      const n = localStorage.getItem('uploaderName')
+      if (n) { setViewerName(n); setNameReady(true) }
+    } catch (e) {}
     const t = setInterval(() => setNow(Date.now()), 1000)
     return () => clearInterval(t)
   }, [])
@@ -55,7 +62,7 @@ export default function Gallery({ params }) {
   const revealed = revealMs == null || now >= revealMs
 
   useEffect(() => {
-    if (!album || !gid) return
+    if (!album || !gid || !nameReady) return
     let cancelled = false
     async function loadPhotos() {
       try {
@@ -68,11 +75,22 @@ export default function Gallery({ params }) {
     }
     loadPhotos()
     return () => { cancelled = true }
-  }, [album, gid, revealed, albumId])
+  }, [album, gid, revealed, nameReady, albumId])
+
+  function submitName(e) {
+    e.preventDefault()
+    const v = viewerName.trim()
+    if (!v) return
+    try { localStorage.setItem('uploaderName', v) } catch (e) {}
+    setNameReady(true)
+  }
 
   async function blobFor(p) {
     if ((album?.download_style) === 'polaroid') {
-      return await toPolaroidBlob(p.storage_path, p.uploader_name)
+      const title = album?.polaroid_title || ''
+      const subtitle = album?.polaroid_subtitle || ''
+      const cap = title || subtitle ? { title, subtitle } : { title: p.uploader_name || '' }
+      return await toPolaroidBlob(p.storage_path, cap)
     }
     const r = await fetch(p.storage_path)
     return await r.blob()
@@ -113,17 +131,43 @@ export default function Gallery({ params }) {
     setZipping(false)
   }
 
+  const eventBg = album?.bg_path ? (
+    <div className="event-bg" style={{ backgroundImage: `url(${album.bg_path})` }} />
+  ) : null
+
   if (loadingAlbum) return <p className="sub" style={{ textAlign: 'center', marginTop: 40 }}>Memuat…</p>
   if (notFound || !album) {
     return (
       <div className="hero" style={{ marginTop: 40 }}>
-        <div className="hero-logo">📷</div>
+        <BrandLogo className="hero-logo" />
         <h1 className="hero-title">Album tidak ditemukan</h1>
       </div>
     )
   }
 
-  // === Belum dibuka: blur + hitung mundur ===
+  if (!nameReady) {
+    return (
+      <div>
+        {eventBg}
+        <div className="hero">
+          <BrandLogo className="hero-logo" />
+          <h1 className="hero-title">{album.name}</h1>
+          <p className="hero-sub">Isi namamu dulu untuk melihat galeri.</p>
+        </div>
+        <div className="card">
+          <form onSubmit={submitName}>
+            <label>Namamu</label>
+            <input type="text" placeholder="Nama kamu" value={viewerName} onChange={(e) => setViewerName(e.target.value)} autoFocus />
+            <button className="btn" type="submit">Lihat galeri</button>
+          </form>
+        </div>
+        <p className="sub" style={{ textAlign: 'center' }}>
+          <Link className="link" href={`/a/${albumId}`}>← Ambil foto</Link>
+        </p>
+      </div>
+    )
+  }
+
   if (!revealed) {
     const diff = Math.max(0, revealMs - now)
     const d = Math.floor(diff / 86400000)
@@ -133,6 +177,7 @@ export default function Gallery({ params }) {
     const pad = (n) => String(n).padStart(2, '0')
     return (
       <div>
+        {eventBg}
         <div className="hero">
           <div className="hero-logo">🎞️</div>
           <h1 className="hero-title">{album.name}</h1>
@@ -178,9 +223,9 @@ export default function Gallery({ params }) {
     )
   }
 
-  // === Sudah dibuka ===
   return (
     <div>
+      {eventBg}
       <div className="page-head">
         <h1 className="page-title">{album.name}</h1>
         <p className="page-sub">{photos.length} foto{album.visibility === 'private' ? ' (fotomu)' : ' terkumpul'}</p>

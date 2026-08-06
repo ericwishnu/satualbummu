@@ -26,12 +26,14 @@ export async function POST(req) {
     const visibility = VISIBILITIES.includes(body.visibility) ? body.visibility : 'public'
     const downloadStyle = DOWNLOAD_STYLES.includes(body.download_style) ? body.download_style : 'raw'
     const eventEnd = body.event_end ? new Date(body.event_end) : null
+    const polaroidTitle = (body.polaroid_title || '').toString().trim().slice(0, 80) || null
+    const polaroidSubtitle = (body.polaroid_subtitle || '').toString().trim().slice(0, 80) || null
 
     const pool = getPool()
     await pool.execute(
-      `INSERT INTO albums (id, name, film_preset, max_per_guest, event_end, reveal_mode, visibility, download_style)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [id, name, filmPreset, maxPerGuest, eventEnd, revealMode, visibility, downloadStyle]
+      `INSERT INTO albums (id, name, film_preset, max_per_guest, event_end, reveal_mode, visibility, download_style, polaroid_title, polaroid_subtitle)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [id, name, filmPreset, maxPerGuest, eventEnd, revealMode, visibility, downloadStyle, polaroidTitle, polaroidSubtitle]
     )
     return NextResponse.json({
       id,
@@ -42,6 +44,8 @@ export async function POST(req) {
       reveal_mode: revealMode,
       visibility,
       download_style: downloadStyle,
+      polaroid_title: polaroidTitle,
+      polaroid_subtitle: polaroidSubtitle,
     })
   } catch (e) {
     return NextResponse.json({ error: 'Gagal membuat album: ' + e.message }, { status: 500 })

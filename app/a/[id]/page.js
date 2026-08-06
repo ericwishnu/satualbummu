@@ -128,9 +128,13 @@ export default function Capture({ params }) {
   }
 
   const presetLabel = FILM_PRESETS[album.film_preset]?.label
+  const eventBg = album?.bg_path ? (
+    <div className="event-bg" style={{ backgroundImage: `url(${album.bg_path})` }} />
+  ) : null
 
   return (
     <div>
+      {eventBg}
       <div className="hero">
         <BrandLogo className="hero-logo" />
         <h1 className="hero-title">{album.name}</h1>

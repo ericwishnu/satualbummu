@@ -19,6 +19,8 @@ export default function Admin() {
   const [revealMode, setRevealMode] = useState('during')
   const [maxPerGuest, setMaxPerGuest] = useState('')
   const [downloadStyle, setDownloadStyle] = useState('raw')
+  const [polaroidTitle, setPolaroidTitle] = useState('')
+  const [polaroidSubtitle, setPolaroidSubtitle] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -60,6 +62,8 @@ export default function Admin() {
           reveal_mode: revealMode,
           max_per_guest: maxPerGuest ? parseInt(maxPerGuest, 10) : null,
           download_style: downloadStyle,
+          polaroid_title: polaroidTitle.trim(),
+          polaroid_subtitle: polaroidSubtitle.trim(),
         }),
       })
       const data = await res.json().catch(() => ({}))
@@ -162,6 +166,15 @@ export default function Admin() {
             <option value="raw">Foto asli</option>
             <option value="polaroid">Bingkai polaroid</option>
           </select>
+
+          {downloadStyle === 'polaroid' ? (
+            <>
+              <label>Caption polaroid — judul</label>
+              <input type="text" maxLength={80} value={polaroidTitle} placeholder="mis. Eric & Claudia" onChange={(e) => setPolaroidTitle(e.target.value)} />
+              <label>Caption polaroid — subjudul</label>
+              <input type="text" maxLength={80} value={polaroidSubtitle} placeholder="mis. 12 Des 2026" onChange={(e) => setPolaroidSubtitle(e.target.value)} />
+            </>
+          ) : null}
 
           {error ? <div className="error">{error}</div> : null}
           <button className="btn" type="submit" disabled={saving}>

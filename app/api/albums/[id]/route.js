@@ -7,7 +7,7 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 const COLS =
-  'id, name, film_preset, max_per_guest, event_end, reveal_mode, visibility, download_style, created_at'
+  'id, name, film_preset, max_per_guest, event_end, reveal_mode, visibility, download_style, polaroid_title, polaroid_subtitle, bg_path, created_at'
 
 // GET /api/albums/:id — ambil satu album
 export async function GET(req, { params }) {
@@ -39,12 +39,15 @@ export async function PATCH(req, { params }) {
     const visibility = VISIBILITIES.includes(body.visibility) ? body.visibility : 'public'
     const downloadStyle = DOWNLOAD_STYLES.includes(body.download_style) ? body.download_style : 'raw'
     const eventEnd = body.event_end ? new Date(body.event_end) : null
+    const polaroidTitle = (body.polaroid_title || '').toString().trim().slice(0, 80) || null
+    const polaroidSubtitle = (body.polaroid_subtitle || '').toString().trim().slice(0, 80) || null
 
     const pool = getPool()
     await pool.execute(
-      `UPDATE albums SET event_end = ?, reveal_mode = ?, visibility = ?, download_style = ?, max_per_guest = ?
+      `UPDATE albums SET event_end = ?, reveal_mode = ?, visibility = ?, download_style = ?, max_per_guest = ?,
+              polaroid_title = ?, polaroid_subtitle = ?
        WHERE id = ?`,
-      [eventEnd, revealMode, visibility, downloadStyle, maxPerGuest, params.id]
+      [eventEnd, revealMode, visibility, downloadStyle, maxPerGuest, polaroidTitle, polaroidSubtitle, params.id]
     )
     const [rows] = await pool.execute(
       `SELECT ${COLS} FROM albums WHERE id = ? LIMIT 1`,

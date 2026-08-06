@@ -25,12 +25,17 @@ export default function Kelola({ params }) {
   const [revealMode, setRevealMode] = useState('during')
   const [visibility, setVisibility] = useState('public')
   const [downloadStyle, setDownloadStyle] = useState('raw')
+  const [polaroidTitle, setPolaroidTitle] = useState('')
+  const [polaroidSubtitle, setPolaroidSubtitle] = useState('')
   const [maxInput, setMaxInput] = useState('')
   const [savingSettings, setSavingSettings] = useState(false)
   const [savedMsg, setSavedMsg] = useState('')
   const [settingsErr, setSettingsErr] = useState('')
+  const [bgPath, setBgPath] = useState(null)
+  const [bgMsg, setBgMsg] = useState('')
 
   const qrWrapRef = useRef(null)
+  const bgRef = useRef(null)
 
   async function loadStats() {
     setLoadingStats(true)
@@ -53,6 +58,9 @@ export default function Kelola({ params }) {
           setRevealMode(data?.reveal_mode || 'during')
           setVisibility(data?.visibility || 'public')
           setDownloadStyle(data?.download_style || 'raw')
+          setPolaroidTitle(data?.polaroid_title || '')
+          setPolaroidSubtitle(data?.polaroid_subtitle || '')
+          setBgPath(data?.bg_path || null)
           setMaxInput(data?.max_per_guest ? String(data.max_per_guest) : '')
         }
       } catch (e) {}
@@ -107,6 +115,8 @@ export default function Kelola({ params }) {
           reveal_mode: revealMode,
           visibility,
           download_style: downloadStyle,
+          polaroid_title: polaroidTitle.trim(),
+          polaroid_subtitle: polaroidSubtitle.trim(),
           max_per_guest: maxInput ? parseInt(maxInput, 10) : null,
         }),
       })
@@ -123,6 +133,30 @@ export default function Kelola({ params }) {
       setSettingsErr('Gagal terhubung ke server.')
     }
     setSavingSettings(false)
+  }
+
+  async function uploadBg(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setBgMsg('')
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      const res = await fetch(`/api/albums/${albumId}/bg`, { method: 'POST', body: fd })
+      const d = await res.json().catch(() => ({}))
+      if (res.ok) { setBgPath(d.bg_path || null); setBgMsg('Background diperbarui ✓') }
+      else setBgMsg(d.error || 'Gagal unggah.')
+    } catch (e) {
+      setBgMsg('Gagal unggah.')
+    }
+    if (bgRef.current) bgRef.current.value = ''
+  }
+
+  async function removeBg() {
+    try {
+      const res = await fetch(`/api/albums/${albumId}/bg`, { method: 'DELETE' })
+      if (res.ok) { setBgPath(null); setBgMsg('Background dihapus ✓') }
+    } catch (e) {}
   }
 
   const presetLabel = album ? (FILM_PRESETS[album.film_preset]?.label || '—') : '…'
@@ -207,12 +241,32 @@ export default function Kelola({ params }) {
             <option value="polaroid">Bingkai polaroid</option>
           </select>
 
+          <label>Caption polaroid — judul</label>
+          <input type="text" maxLength={80} value={polaroidTitle} placeholder="mis. Eric & Claudia" onChange={(e) => setPolaroidTitle(e.target.value)} />
+          <label>Caption polaroid — subjudul</label>
+          <input type="text" maxLength={80} value={polaroidSubtitle} placeholder="mis. 12 Des 2026" onChange={(e) => setPolaroidSubtitle(e.target.value)} />
+          <p className="sub" style={{ marginTop: 6, fontSize: 12 }}>Caption hanya muncul kalau gaya unduhan = bingkai polaroid.</p>
+
           {settingsErr ? <div className="error">{settingsErr}</div> : null}
           {savedMsg ? <div className="ok">{savedMsg}</div> : null}
           <button className="btn" type="submit" disabled={savingSettings}>
             {savingSettings ? 'Menyimpan…' : 'Simpan pengaturan'}
           </button>
         </form>
+      </div>
+
+      <div className="card">
+        <h2 className="section-title">Background acara</h2>
+        <p className="sub" style={{ fontSize: 13 }}>Gambar latar untuk halaman ambil foto & galeri acara ini (diberi gradient hitam→transparan).</p>
+        {bgPath ? (
+          <div style={{ position: 'relative', height: 120, borderRadius: 12, overflow: 'hidden', border: '1px solid var(--line)', marginBottom: 10, backgroundImage: `url(${bgPath})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,0.85), rgba(0,0,0,0.25))' }} />
+          </div>
+        ) : null}
+        <input ref={bgRef} id="bg" type="file" accept="image/*" onChange={uploadBg} style={{ display: 'none' }} />
+        <label htmlFor="bg" className="btn secondary" style={{ cursor: 'pointer' }}>⬆ Unggah background</label>
+        {bgPath ? <button className="btn secondary" onClick={removeBg} style={{ marginTop: 10 }}>Hapus background</button> : null}
+        {bgMsg ? <div className="ok">{bgMsg}</div> : null}
       </div>
 
       <div className="card">
