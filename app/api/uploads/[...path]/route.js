@@ -19,10 +19,15 @@ export async function GET(req, { params }) {
     }
     const filePath = path.join(process.cwd(), 'uploads', ...parts)
     const data = await readFile(filePath)
+    const ext = (parts[parts.length - 1].split('.').pop() || '').toLowerCase()
+    const types = {
+      jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png',
+      webp: 'image/webp', gif: 'image/gif', svg: 'image/svg+xml',
+    }
     return new NextResponse(new Uint8Array(data), {
       status: 200,
       headers: {
-        'Content-Type': 'image/jpeg',
+        'Content-Type': types[ext] || 'image/jpeg',
         'Cache-Control': 'public, max-age=31536000, immutable',
       },
     })

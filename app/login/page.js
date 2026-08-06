@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { BrandLogo, BrandName } from '@/components/BrandProvider'
 
 export default function Login() {
   const router = useRouter()
@@ -35,8 +36,8 @@ export default function Login() {
   return (
     <div className="auth-wrap">
       <div className="auth-card">
-        <div className="auth-logo">📷</div>
-        <h1 className="auth-title">SatuAlbumMu</h1>
+        <BrandLogo className="auth-logo" />
+        <h1 className="auth-title"><BrandName /></h1>
         <p className="auth-tagline">Kamera sekali pakai digital untuk acaramu</p>
 
         <form onSubmit={submit} className="auth-form">

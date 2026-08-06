@@ -3,6 +3,22 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import JSZip from 'jszip'
+import { revealTimestamp } from '@/lib/reveal'
+import { clientUUID } from '@/lib/uuid'
+import { toPolaroidBlob } from '@/lib/polaroid'
+
+function getGuestId() {
+  try {
+    let id = localStorage.getItem('guestId')
+    if (!id) {
+      id = clientUUID()
+      localStorage.setItem('guestId', id)
+    }
+    return id
+  } catch (e) {
+    return 'anon'
+  }
+}
 
 export default function Gallery({ params }) {
   const albumId = params.id
@@ -10,12 +26,13 @@ export default function Gallery({ params }) {
   const [loadingAlbum, setLoadingAlbum] = useState(true)
   const [notFound, setNotFound] = useState(false)
   const [photos, setPhotos] = useState([])
-  const [loadedPhotos, setLoadedPhotos] = useState(false)
   const [now, setNow] = useState(() => Date.now())
+  const [gid, setGid] = useState('')
   const [zipping, setZipping] = useState(false)
-  const [zipMsg, setZipMsg] = useState('')
+  const [msg, setMsg] = useState('')
 
   useEffect(() => {
+    setGid(getGuestId())
     const t = setInterval(() => setNow(Date.now()), 1000)
     return () => clearInterval(t)
   }, [])
@@ -34,30 +51,53 @@ export default function Gallery({ params }) {
     loadAlbum()
   }, [albumId])
 
-  const revealTime = album?.reveal_at ? new Date(album.reveal_at).getTime() : null
-  const revealed = !revealTime || now >= revealTime
+  const revealMs = album ? revealTimestamp(album) : null
+  const revealed = revealMs == null || now >= revealMs
 
   useEffect(() => {
+    if (!album || !gid) return
+    let cancelled = false
     async function loadPhotos() {
       try {
-        const res = await fetch(`/api/albums/${albumId}/photos`)
-        if (res.ok) setPhotos(await res.json())
+        const res = await fetch(`/api/albums/${albumId}/photos?guest_id=${encodeURIComponent(gid)}`)
+        if (res.ok) {
+          const data = await res.json()
+          if (!cancelled) setPhotos(data)
+        }
       } catch (e) {}
-      setLoadedPhotos(true)
     }
-    if (revealed && !loadedPhotos && album) loadPhotos()
-  }, [revealed, loadedPhotos, album, albumId])
+    loadPhotos()
+    return () => { cancelled = true }
+  }, [album, gid, revealed, albumId])
+
+  async function blobFor(p) {
+    if ((album?.download_style) === 'polaroid') {
+      return await toPolaroidBlob(p.storage_path, p.uploader_name)
+    }
+    const r = await fetch(p.storage_path)
+    return await r.blob()
+  }
+
+  async function downloadOne(p) {
+    try {
+      const blob = await blobFor(p)
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(blob)
+      a.download = `${(p.uploader_name || 'foto').replace(/[^a-z0-9]/gi, '_')}.jpg`
+      a.click()
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000)
+    } catch (e) {}
+  }
 
   async function downloadAll() {
     if (!photos.length) return
     setZipping(true)
-    setZipMsg('')
+    setMsg('')
     try {
       const zip = new JSZip()
       for (let i = 0; i < photos.length; i++) {
         const p = photos[i]
-        const resp = await fetch(p.storage_path)
-        const blob = await resp.blob()
+        const blob = await blobFor(p)
         const who = (p.uploader_name || 'tamu').replace(/[^a-z0-9]/gi, '_')
         zip.file(`${String(i + 1).padStart(3, '0')}_${who}.jpg`, blob)
       }
@@ -68,7 +108,7 @@ export default function Gallery({ params }) {
       a.click()
       setTimeout(() => URL.revokeObjectURL(a.href), 4000)
     } catch (e) {
-      setZipMsg('Gagal mengunduh semua. Coba unduh satu per satu ya.')
+      setMsg('Gagal mengunduh semua. Coba unduh satu per satu ya.')
     }
     setZipping(false)
   }
@@ -83,8 +123,9 @@ export default function Gallery({ params }) {
     )
   }
 
+  // === Belum dibuka: blur + hitung mundur ===
   if (!revealed) {
-    const diff = Math.max(0, revealTime - now)
+    const diff = Math.max(0, revealMs - now)
     const d = Math.floor(diff / 86400000)
     const h = Math.floor((diff % 86400000) / 3600000)
     const m = Math.floor((diff % 3600000) / 60000)
@@ -95,7 +136,11 @@ export default function Gallery({ params }) {
         <div className="hero">
           <div className="hero-logo">🎞️</div>
           <h1 className="hero-title">{album.name}</h1>
-          <p className="hero-sub">Foto masih di dalam &quot;roll&quot;. Semua akan dibuka bersamaan pada:</p>
+          <p className="hero-sub">
+            {photos.length > 0
+              ? 'Ini fotomu — masih terkunci. Semua foto akan terbuka bersamaan pada:'
+              : 'Galeri masih terkunci. Foto akan dibuka pada:'}
+          </p>
         </div>
         <div className="card">
           <div className="cd-grid">
@@ -105,20 +150,47 @@ export default function Gallery({ params }) {
             <div className="cd-box"><div className="cd-num">{pad(s)}</div><div className="cd-lbl">Detik</div></div>
           </div>
           <p className="sub" style={{ textAlign: 'center', margin: '14px 0 0', fontSize: 13 }}>
-            {new Date(revealTime).toLocaleString('id-ID')}
+            {new Date(revealMs).toLocaleString('id-ID')}
           </p>
         </div>
-        <Link className="btn secondary" href={`/a/${albumId}`}>← Ambil foto</Link>
+
+        {photos.length > 0 ? (
+          <div className="masonry blurred">
+            {photos.map((p) => (
+              <div className="m-item" key={p.id}>
+                <img src={p.storage_path} alt="" loading="lazy" />
+                <span className="m-lock">🔒</span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="card">
+            <p className="sub" style={{ margin: 0, textAlign: 'center' }}>
+              Kamu belum mengunggah foto. <Link className="link" href={`/a/${albumId}`}>Ambil foto dulu →</Link>
+            </p>
+          </div>
+        )}
+
+        <p className="sub" style={{ textAlign: 'center', marginTop: 20 }}>
+          <Link className="link" href={`/a/${albumId}`}>← Ambil foto</Link>
+        </p>
       </div>
     )
   }
 
+  // === Sudah dibuka ===
   return (
     <div>
       <div className="page-head">
         <h1 className="page-title">{album.name}</h1>
-        <p className="page-sub">{photos.length} foto terkumpul</p>
+        <p className="page-sub">{photos.length} foto{album.visibility === 'private' ? ' (fotomu)' : ' terkumpul'}</p>
       </div>
+
+      {album.visibility === 'private' ? (
+        <p className="sub" style={{ fontSize: 13, marginTop: -6 }}>
+          🔒 Galeri privat — tiap tamu hanya melihat foto yang ia unggah.
+        </p>
+      ) : null}
 
       {photos.length === 0 ? (
         <div className="card">
@@ -129,11 +201,14 @@ export default function Gallery({ params }) {
           <button className="btn" onClick={downloadAll} disabled={zipping}>
             {zipping ? 'Menyiapkan…' : `⬇ Unduh semua (${photos.length})`}
           </button>
-          {zipMsg ? <div className="error">{zipMsg}</div> : null}
+          {album.download_style === 'polaroid' ? (
+            <p className="sub" style={{ fontSize: 12, textAlign: 'center', marginTop: 8 }}>Unduhan memakai bingkai polaroid.</p>
+          ) : null}
+          {msg ? <div className="error">{msg}</div> : null}
           <div className="masonry">
             {photos.map((p) => (
               <div className="m-item" key={p.id}>
-                <a className="m-dl" href={p.storage_path} download title="Unduh">⬇</a>
+                <button className="m-dl" onClick={() => downloadOne(p)} title="Unduh">⬇</button>
                 <img src={p.storage_path} alt={p.uploader_name || 'foto'} loading="lazy" />
                 {p.uploader_name ? <span className="m-chip">{p.uploader_name}</span> : null}
               </div>

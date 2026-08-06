@@ -1,19 +1,20 @@
 -- =====================================================================
--- SatuAlbumMu — skema database MySQL
--- Cara pakai:
+-- SatuAlbumMu — snapshot skema MySQL (opsional / sekali-jalan).
+-- Sumber kebenaran struktur ada di folder migrations/ (npm run migrate).
+-- File ini hanya berguna kalau ingin membuat semua tabel sekaligus.
 --   mysql -u USER -p NAMA_DATABASE < db/schema.sql
--- atau tempel isi file ini di phpMyAdmin / Adminer lalu jalankan.
--- Pastikan database-nya sudah dibuat lebih dulu, mis:
---   CREATE DATABASE satualbummu CHARACTER SET utf8mb4;
 -- =====================================================================
 
 CREATE TABLE IF NOT EXISTS albums (
-  id            CHAR(36)     NOT NULL PRIMARY KEY,
-  name          VARCHAR(255) NOT NULL,
-  reveal_at     DATETIME     NULL,
-  film_preset   VARCHAR(32)  NOT NULL DEFAULT 'klasik',
-  max_per_guest INT          NULL,
-  created_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
+  id             CHAR(36)     NOT NULL PRIMARY KEY,
+  name           VARCHAR(255) NOT NULL,
+  film_preset    VARCHAR(32)  NOT NULL DEFAULT 'klasik',
+  max_per_guest  INT          NULL,
+  event_end      DATETIME     NULL,
+  reveal_mode    VARCHAR(16)  NOT NULL DEFAULT 'during',
+  visibility     VARCHAR(16)  NOT NULL DEFAULT 'public',
+  download_style VARCHAR(16)  NOT NULL DEFAULT 'raw',
+  created_at     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS photos (

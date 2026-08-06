@@ -3,12 +3,14 @@
 Kamera sekali pakai digital untuk acara — versi buatan sendiri. Tamu scan QR, motret lewat browser HP (tanpa install app), semua foto muncul bareng-bareng di galeri pada waktu yang kamu tentukan.
 
 Fitur:
-- Ambil foto lewat link/QR (langsung buka kamera HP)
+- Ambil foto lewat link/QR (langsung buka kamera HP), pilih dari kamera atau galeri
 - Galeri gabungan + unduh per foto **dan unduh semua sekaligus (zip)**
-- Reveal serentak (foto disembunyikan sampai waktu yang ditentukan)
+- **Reveal terjadwal** — atur kapan acara berakhir & kapan galeri dibuka (selama acara / saat berakhir / +1j·6j·12j·24j·48j). Sebelum dibuka, tiap tamu hanya melihat fotonya sendiri dalam keadaan blur.
+- **Visibilitas** publik (semua lihat semua) atau privat (tiap tamu hanya lihat fotonya)
+- **Gaya unduhan** foto asli atau bingkai polaroid (dengan nama pengambil)
 - **Preset filter film** — satu look seragam untuk seluruh album
 - **Batas foto per tamu** (dicek di server)
-- **Portal admin** — hanya pemilik (punya password) yang bisa membuat & melihat semua album
+- **Portal admin** dengan login — hanya pemilik yang bisa buat/kelola album
 
 **Arsitektur (versi MySQL / VM sendiri):**
 - **Next.js** — tampilan + API routes (folder `app/api`)
@@ -78,7 +80,7 @@ Saat mengembangkan:
 npm run dev
 ```
 
-Buka http://localhost:3000 → diarahkan ke halaman login admin. Alur: login → buat album → halaman "kelola" (QR & link) → bagikan link ke tamu → galeri.
+Buka http://localhost:3000. Alur: buat album → halaman "kelola" (QR & link) → buka link → ambil foto → galeri.
 
 Untuk dipakai beneran di VM (mode produksi):
 
@@ -104,10 +106,28 @@ Ada dua "sisi":
 
 Ganti password admin = cukup ubah `ADMIN_PASSWORD` di `.env.local` lalu restart aplikasi. Untuk memaksa semua sesi login ulang, ubah juga `SESSION_SECRET`.
 
+Halaman `/admin` dan `/a/<id>/kelola` dilindungi login (dicek di server via `middleware.js`, jadi tidak ada "kedipan").
+
+## Reveal, visibilitas & unduhan (setelan per album)
+
+Saat membuat album (atau di halaman Kelola), admin mengatur:
+
+- **Kapan acara berakhir** — waktu acuan untuk membuka galeri.
+- **Kapan galeri dibuka** — `Selama acara` (langsung tampil), `Saat acara berakhir`, atau `+1/6/12/24/48 jam` setelah berakhir.
+- **Visibilitas** — `Publik` (semua tamu melihat semua foto) atau `Privat` (tiap tamu hanya melihat foto yang ia unggah).
+- **Gaya unduhan** — `Foto asli` atau `Bingkai polaroid` (menambahkan bingkai putih + nama pengambil saat diunduh).
+
+Perilaku galeri:
+
+- **Sebelum dibuka:** siapa pun yang membuka galeri hanya melihat **fotonya sendiri** dalam keadaan **blur**, plus hitung mundur. Yang belum mengunggah hanya melihat hitung mundur.
+- **Setelah dibuka:** publik → semua foto tampil jelas; privat → tiap tamu tetap hanya melihat fotonya sendiri. Admin (login) selalu melihat semua.
+
+Aturan ini dijaga di server (API `photos`), bukan hanya di tampilan.
+
 ## Langkah 6 — Domain, HTTPS & "CDN"
 
 - Pasang **nginx** sebagai reverse proxy ke `localhost:3000`, arahkan domainmu ke VM.
-- **HTTPS wajib** supaya kamera HP tamu mulus. Cara termudah: taruh **Cloudflare (gratis)** di depan domainmu — sekaligus memberi efek CDN (cache & percepatan) untuk foto tanpa mengubah kode. Alternatif: sertifikat gratis Let's Encrypt via nginx. Setelah HTTPS aktif, set `COOKIE_SECURE=1`.
+- **HTTPS wajib** supaya kamera HP tamu mulus. Cara termudah: taruh **Cloudflare (gratis)** di depan domainmu — sekaligus memberi efek CDN (cache & percepatan) untuk foto tanpa mengubah kode. Alternatif: sertifikat gratis Let's Encrypt via nginx.
 - Foto dilayani aplikasi lewat `/api/uploads/...` (dibaca dari folder `uploads/`). Kalau trafik besar, arahkan nginx menyajikan folder `uploads/` langsung, mis: `location /api/uploads/ { alias /path/ke/app/uploads/; }` (lebih ringan daripada lewat Node), dan/atau andalkan cache Cloudflare.
 
 ---
@@ -149,22 +169,24 @@ Di VM/produksi, setelah menarik kode terbaru cukup jalankan `npm run migrate` la
 ## Struktur folder
 
 ```
+middleware.js                → cek login admin di server (anti-kedipan)
 app/
-  page.js                    → redirect ke /admin
+  page.js                    → beranda: dialihkan ke /admin
   login/page.js              → login admin
   admin/page.js              → portal admin: buat album + daftar semua album
   a/[id]/page.js             → halaman ambil foto (di-scan tamu)
-  a/[id]/galeri/page.js      → galeri + reveal + unduh semua
-  a/[id]/kelola/page.js      → QR, statistik, pengaturan
+  a/[id]/galeri/page.js      → galeri: blur/reveal, unduh (asli/polaroid)
+  a/[id]/kelola/page.js      → QR, statistik, pengaturan (admin)
   api/albums/route.js               → POST buat album (admin)
-  api/albums/[id]/route.js          → GET album, PATCH pengaturan (admin)
-  api/albums/[id]/photos/route.js   → GET daftar foto, POST unggah foto
+  api/albums/[id]/route.js          → GET album, PATCH setelan (admin)
+  api/albums/[id]/photos/route.js   → GET daftar foto (aturan privasi), POST unggah
   api/uploads/[...path]/route.js    → menyajikan file foto
   api/admin/albums/route.js         → daftar semua album (admin)
-  api/auth/login/route.js           → login admin
-  api/auth/logout/route.js          → logout admin
+  api/auth/login|logout/route.js    → login/logout admin
 lib/db.js                    → koneksi MySQL (server)
 lib/auth.js                  → autentikasi admin
+lib/reveal.js                → logika kapan galeri dibuka
+lib/polaroid.js              → bingkai polaroid saat unduh (browser)
 lib/filmPresets.js           → preset & pemrosesan filter foto (browser)
 lib/uuid.js                  → uuid untuk browser (aman di HTTP)
 migrations/                  → file migration .sql bernomor (up/down)
@@ -175,7 +197,7 @@ uploads/                     → file foto (dibuat otomatis, tidak masuk git)
 
 ## Catatan
 
-- **Reveal serentak** diterapkan di sisi tampilan; **batas foto per tamu** dicek di server. Untuk skala pakai sendiri sudah cukup.
+- **Aturan reveal/privasi & batas foto per tamu** dicek di server (API), bukan hanya di tampilan.
 - **Backup foto** = cukup backup folder `uploads` + database MySQL.
 - Foto diproses (filter + diperkecil) di browser tamu sebelum dikirim, jadi beban server ringan.
 - **Trial 30 hari + pembayaran** belum dibuat (tahap ini untuk pakai sendiri). Fondasinya sudah siap ditambah nanti.

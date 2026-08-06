@@ -13,7 +13,8 @@ export async function GET(req) {
   try {
     const pool = getPool()
     const [rows] = await pool.query(
-      `SELECT a.id, a.name, a.reveal_at, a.film_preset, a.max_per_guest, a.created_at,
+      `SELECT a.id, a.name, a.film_preset, a.max_per_guest, a.event_end, a.reveal_mode,
+              a.visibility, a.download_style, a.created_at,
               (SELECT COUNT(*) FROM photos p WHERE p.album_id = a.id) AS photo_count
        FROM albums a
        ORDER BY a.created_at DESC`

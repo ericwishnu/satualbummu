@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { QRCodeCanvas } from 'qrcode.react'
 import { FILM_PRESETS } from '@/lib/filmPresets'
+import { REVEAL_OPTIONS } from '@/lib/reveal'
 
 function toLocalInput(iso) {
   if (!iso) return ''
@@ -20,7 +21,10 @@ export default function Kelola({ params }) {
   const [photos, setPhotos] = useState([])
   const [loadingStats, setLoadingStats] = useState(true)
 
-  const [revealInput, setRevealInput] = useState('')
+  const [eventEnd, setEventEnd] = useState('')
+  const [revealMode, setRevealMode] = useState('during')
+  const [visibility, setVisibility] = useState('public')
+  const [downloadStyle, setDownloadStyle] = useState('raw')
   const [maxInput, setMaxInput] = useState('')
   const [savingSettings, setSavingSettings] = useState(false)
   const [savedMsg, setSavedMsg] = useState('')
@@ -45,7 +49,10 @@ export default function Kelola({ params }) {
         if (res.ok) {
           const data = await res.json()
           setAlbum(data)
-          setRevealInput(toLocalInput(data?.reveal_at))
+          setEventEnd(toLocalInput(data?.event_end))
+          setRevealMode(data?.reveal_mode || 'during')
+          setVisibility(data?.visibility || 'public')
+          setDownloadStyle(data?.download_style || 'raw')
           setMaxInput(data?.max_per_guest ? String(data.max_per_guest) : '')
         }
       } catch (e) {}
@@ -86,13 +93,20 @@ export default function Kelola({ params }) {
     e.preventDefault()
     setSettingsErr('')
     setSavedMsg('')
+    if (revealMode !== 'during' && !eventEnd) {
+      setSettingsErr('Isi waktu acara berakhir dulu, atau pilih "Selama acara".')
+      return
+    }
     setSavingSettings(true)
     try {
       const res = await fetch(`/api/albums/${albumId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          reveal_at: revealInput ? new Date(revealInput).toISOString() : null,
+          event_end: eventEnd ? new Date(eventEnd).toISOString() : null,
+          reveal_mode: revealMode,
+          visibility,
+          download_style: downloadStyle,
           max_per_guest: maxInput ? parseInt(maxInput, 10) : null,
         }),
       })
@@ -168,20 +182,31 @@ export default function Kelola({ params }) {
         <h2 className="section-title">Pengaturan</h2>
         <p className="sub" style={{ fontSize: 13 }}>Filter foto album ini: <strong>{presetLabel}</strong></p>
         <form onSubmit={saveSettings}>
-          <label>Foto dibuka pada (kosongkan = langsung tampil)</label>
-          <input
-            type="datetime-local"
-            value={revealInput}
-            onChange={(e) => setRevealInput(e.target.value)}
-          />
+          <label>Visibilitas galeri</label>
+          <select value={visibility} onChange={(e) => setVisibility(e.target.value)}>
+            <option value="public">Publik — semua tamu melihat semua foto</option>
+            <option value="private">Privat — tiap tamu hanya melihat fotonya sendiri</option>
+          </select>
+
+          <label>Kapan acara berakhir</label>
+          <input type="datetime-local" value={eventEnd} onChange={(e) => setEventEnd(e.target.value)} />
+
+          <label>Kapan galeri dibuka</label>
+          <select value={revealMode} onChange={(e) => setRevealMode(e.target.value)}>
+            {REVEAL_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+
           <label>Batas foto per tamu (kosongkan = tanpa batas)</label>
-          <input
-            type="number"
-            min="1"
-            placeholder="mis. 10"
-            value={maxInput}
-            onChange={(e) => setMaxInput(e.target.value)}
-          />
+          <input type="number" min="1" placeholder="mis. 10" value={maxInput} onChange={(e) => setMaxInput(e.target.value)} />
+
+          <label>Gaya unduhan</label>
+          <select value={downloadStyle} onChange={(e) => setDownloadStyle(e.target.value)}>
+            <option value="raw">Foto asli</option>
+            <option value="polaroid">Bingkai polaroid</option>
+          </select>
+
           {settingsErr ? <div className="error">{settingsErr}</div> : null}
           {savedMsg ? <div className="ok">{savedMsg}</div> : null}
           <button className="btn" type="submit" disabled={savingSettings}>
@@ -191,7 +216,8 @@ export default function Kelola({ params }) {
       </div>
 
       <div className="card">
-        <Link className="btn secondary" href={`/a/${albumId}/galeri`}>Lihat galeri</Link>
+        <Link className="btn" href={`/a/${albumId}/cetak`}>🖨 Kartu QR untuk dicetak</Link>
+        <Link className="btn secondary" href={`/a/${albumId}/galeri`} style={{ marginTop: 10 }}>Lihat galeri</Link>
         <Link className="btn secondary" href={`/a/${albumId}`} style={{ marginTop: 10 }}>Halaman ambil foto</Link>
       </div>
 

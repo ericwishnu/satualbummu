@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { processImage, FILM_PRESETS, DEFAULT_PRESET } from '@/lib/filmPresets'
 import { clientUUID } from '@/lib/uuid'
+import { BrandLogo } from '@/components/BrandProvider'
 
 function getGuestId() {
   try {
@@ -48,7 +49,7 @@ export default function Capture({ params }) {
         const res = await fetch(`/api/albums/${albumId}`)
         if (res.ok) {
           setAlbum(await res.json())
-          const pr = await fetch(`/api/albums/${albumId}/photos`)
+          const pr = await fetch(`/api/albums/${albumId}/photos?guest_id=${encodeURIComponent(gid)}`)
           if (pr.ok) {
             const photos = await pr.json()
             setUsed(photos.filter((p) => p.guest_id === gid).length)
@@ -119,7 +120,7 @@ export default function Capture({ params }) {
   if (!album) {
     return (
       <div className="hero" style={{ marginTop: 40 }}>
-        <div className="hero-logo">📷</div>
+        <BrandLogo className="hero-logo" />
         <h1 className="hero-title">Album tidak ditemukan</h1>
         <p className="hero-sub">Link mungkin salah, atau album sudah dihapus.</p>
       </div>
@@ -131,7 +132,7 @@ export default function Capture({ params }) {
   return (
     <div>
       <div className="hero">
-        <div className="hero-logo">📷</div>
+        <BrandLogo className="hero-logo" />
         <h1 className="hero-title">{album.name}</h1>
         <p className="hero-sub">
           Ambil momen dari acara ini. Fotomu akan tergabung dan muncul bareng-bareng di galeri.

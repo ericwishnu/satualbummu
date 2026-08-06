@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { FILM_PRESETS, DEFAULT_PRESET } from '@/lib/filmPresets'
+import { REVEAL_OPTIONS } from '@/lib/reveal'
+import { BrandLogo, BrandName } from '@/components/BrandProvider'
 
 export default function Admin() {
   const router = useRouter()
@@ -11,9 +13,12 @@ export default function Admin() {
   const [loading, setLoading] = useState(true)
 
   const [name, setName] = useState('')
-  const [revealAt, setRevealAt] = useState('')
   const [preset, setPreset] = useState(DEFAULT_PRESET)
+  const [visibility, setVisibility] = useState('public')
+  const [eventEnd, setEventEnd] = useState('')
+  const [revealMode, setRevealMode] = useState('during')
   const [maxPerGuest, setMaxPerGuest] = useState('')
+  const [downloadStyle, setDownloadStyle] = useState('raw')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -38,6 +43,10 @@ export default function Admin() {
       setError('Nama acara wajib diisi.')
       return
     }
+    if (revealMode !== 'during' && !eventEnd) {
+      setError('Isi waktu acara berakhir dulu, atau pilih "Selama acara".')
+      return
+    }
     setSaving(true)
     try {
       const res = await fetch('/api/albums', {
@@ -45,9 +54,12 @@ export default function Admin() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: name.trim(),
-          reveal_at: revealAt ? new Date(revealAt).toISOString() : null,
           film_preset: preset,
+          visibility,
+          event_end: eventEnd ? new Date(eventEnd).toISOString() : null,
+          reveal_mode: revealMode,
           max_per_guest: maxPerGuest ? parseInt(maxPerGuest, 10) : null,
+          download_style: downloadStyle,
         }),
       })
       const data = await res.json().catch(() => ({}))
@@ -87,13 +99,16 @@ export default function Admin() {
     <div>
       <div className="topbar">
         <div className="brandmark">
-          <div className="mark">📷</div>
+          <BrandLogo className="mark" />
           <div>
-            <div className="brandname">SatuAlbumMu</div>
+            <div className="brandname"><BrandName /></div>
             <div className="brandrole">Panel admin</div>
           </div>
         </div>
-        <button className="btn-ghost" onClick={logout}>Keluar</button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Link className="btn-ghost" href="/admin/branding">⚙ Branding</Link>
+          <button className="btn-ghost" onClick={logout}>Keluar</button>
+        </div>
       </div>
 
       <div className="statrow" style={{ marginBottom: 16 }}>
@@ -120,11 +135,33 @@ export default function Admin() {
             ))}
           </select>
 
+          <label>Visibilitas galeri</label>
+          <select value={visibility} onChange={(e) => setVisibility(e.target.value)}>
+            <option value="public">Publik — semua tamu melihat semua foto</option>
+            <option value="private">Privat — tiap tamu hanya melihat fotonya sendiri</option>
+          </select>
+
+          <label>Kapan acara berakhir</label>
+          <input type="datetime-local" value={eventEnd} onChange={(e) => setEventEnd(e.target.value)} />
+
+          <label>Kapan galeri dibuka</label>
+          <select value={revealMode} onChange={(e) => setRevealMode(e.target.value)}>
+            {REVEAL_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+          <p className="sub" style={{ marginTop: 6, fontSize: 12 }}>
+            Sebelum dibuka, tiap tamu hanya melihat fotonya sendiri dalam keadaan blur.
+          </p>
+
           <label>Batas foto per tamu (opsional)</label>
           <input type="number" min="1" placeholder="mis. 10 — kosongkan untuk tanpa batas" value={maxPerGuest} onChange={(e) => setMaxPerGuest(e.target.value)} />
 
-          <label>Foto dibuka pada (opsional)</label>
-          <input type="datetime-local" value={revealAt} onChange={(e) => setRevealAt(e.target.value)} />
+          <label>Gaya unduhan</label>
+          <select value={downloadStyle} onChange={(e) => setDownloadStyle(e.target.value)}>
+            <option value="raw">Foto asli</option>
+            <option value="polaroid">Bingkai polaroid</option>
+          </select>
 
           {error ? <div className="error">{error}</div> : null}
           <button className="btn" type="submit" disabled={saving}>
@@ -147,7 +184,7 @@ export default function Admin() {
                 <div className="a-meta">
                   <span>📷 {a.photo_count} foto</span>
                   <span>{fmtDate(a.created_at)}</span>
-                  <span>🎞️ {FILM_PRESETS[a.film_preset]?.label || a.film_preset}</span>
+                  <span>{a.visibility === 'private' ? '🔒 Privat' : '🌐 Publik'}</span>
                 </div>
               </div>
               <div className="album-actions">
