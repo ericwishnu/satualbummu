@@ -6,6 +6,8 @@ import JSZip from 'jszip'
 import { revealTimestamp } from '@/lib/reveal'
 import { clientUUID } from '@/lib/uuid'
 import { toPolaroidBlob } from '@/lib/polaroid'
+import { getInitialLang, tFor } from '@/lib/i18n'
+import LangToggle from '@/components/LangToggle'
 
 function getGuestId() {
   try {
@@ -32,15 +34,18 @@ export default function GalleryPage({ albumId }) {
   const [msg, setMsg] = useState('')
   const [viewerName, setViewerName] = useState('')
   const [nameReady, setNameReady] = useState(false)
+  const [lang, setLang] = useState('en')
+  const t = tFor(lang)
 
   useEffect(() => {
+    setLang(getInitialLang())
     setGid(getGuestId())
     try {
       const n = localStorage.getItem('uploaderName')
       if (n) { setViewerName(n); setNameReady(true) }
     } catch (e) {}
-    const t = setInterval(() => setNow(Date.now()), 1000)
-    return () => clearInterval(t)
+    const timer = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(timer)
   }, [])
 
   useEffect(() => {
@@ -125,7 +130,7 @@ export default function GalleryPage({ albumId }) {
       a.click()
       setTimeout(() => URL.revokeObjectURL(a.href), 4000)
     } catch (e) {
-      setMsg('Gagal mengunduh semua. Coba unduh satu per satu ya.')
+      setMsg(t.errDownloadAll)
     }
     setZipping(false)
   }
@@ -135,16 +140,17 @@ export default function GalleryPage({ albumId }) {
   const heroClass = `ev-hero ${hasBg ? '' : 'noimg'}`
   const base = album?.slug ? `/event/${album.slug}` : `/a/${albumId}`
 
-  if (loadingAlbum) return <p className="sub" style={{ textAlign: 'center', marginTop: 60 }}>Memuat…</p>
+  if (loadingAlbum) return <p className="sub" style={{ textAlign: 'center', marginTop: 60 }}>{t.loading}</p>
 
   if (notFound || !album) {
     return (
       <div className="ev">
+        <LangToggle lang={lang} onChange={setLang} />
         <div className="ev-hero noimg" />
         <div className="ev-body">
           <div className="ev-spacer" />
-          <h1 className="ev-title font-serif">Album tidak ditemukan</h1>
-          <p className="ev-sub">Link mungkin salah, atau album sudah dihapus.</p>
+          <h1 className="ev-title font-serif">{t.notFoundTitle}</h1>
+          <p className="ev-sub">{t.notFoundSub}</p>
         </div>
       </div>
     )
@@ -154,28 +160,29 @@ export default function GalleryPage({ albumId }) {
   if (!nameReady) {
     return (
       <div className="ev">
+        <LangToggle lang={lang} onChange={setLang} />
         <div className={heroClass} style={heroStyle} />
         <div className="ev-body">
           <div className="ev-spacer" />
-          <div className="ev-kicker">Galeri Acara</div>
+          <div className="ev-kicker">{t.kickerGallery}</div>
           <h1 className="ev-title font-serif">{album.name}</h1>
-          <p className="ev-sub">Tulis namamu dulu untuk melihat galeri.</p>
+          <p className="ev-sub">{t.nameGateSub}</p>
           <div className="ev-panel">
             <form onSubmit={submitName}>
               <input
                 className="ev-name"
                 type="text"
-                placeholder="Tulis namamu…"
+                placeholder={t.namePlaceholder}
                 value={viewerName}
                 onChange={(e) => setViewerName(e.target.value)}
                 autoFocus
               />
               <div className="ev-actions">
-                <button className="ev-btn primary" type="submit">Lihat Galeri</button>
+                <button className="ev-btn primary" type="submit">{t.btnViewGallery}</button>
               </div>
             </form>
           </div>
-          <Link className="ev-gallery-link" href={base}>← Ambil foto</Link>
+          <Link className="ev-gallery-link" href={base}>{t.backTakePhoto}</Link>
         </div>
       </div>
     )
@@ -191,24 +198,21 @@ export default function GalleryPage({ albumId }) {
     const pad = (n) => String(n).padStart(2, '0')
     return (
       <div className="ev compact">
+        <LangToggle lang={lang} onChange={setLang} />
         <div className={heroClass} style={heroStyle} />
         <div className="ev-body wide">
           <div className="ev-spacer" />
-          <div className="ev-kicker">Segera Terungkap</div>
+          <div className="ev-kicker">{t.kickerRevealing}</div>
           <h1 className="ev-title font-serif">{album.name}</h1>
-          <p className="ev-sub">
-            {photos.length > 0
-              ? 'Ini fotomu — masih terkunci. Semua foto terbuka bersamaan pada:'
-              : 'Galeri masih terkunci. Foto akan terbuka pada:'}
-          </p>
+          <p className="ev-sub">{photos.length > 0 ? t.lockedYours : t.lockedGeneric}</p>
 
           <div className="ev-cd-grid">
-            <div className="ev-cd"><div className="ev-cd-num font-serif">{d}</div><div className="ev-cd-lbl">Hari</div></div>
-            <div className="ev-cd"><div className="ev-cd-num font-serif">{pad(h)}</div><div className="ev-cd-lbl">Jam</div></div>
-            <div className="ev-cd"><div className="ev-cd-num font-serif">{pad(m)}</div><div className="ev-cd-lbl">Menit</div></div>
-            <div className="ev-cd"><div className="ev-cd-num font-serif">{pad(s)}</div><div className="ev-cd-lbl">Detik</div></div>
+            <div className="ev-cd"><div className="ev-cd-num font-serif">{d}</div><div className="ev-cd-lbl">{t.cdDays}</div></div>
+            <div className="ev-cd"><div className="ev-cd-num font-serif">{pad(h)}</div><div className="ev-cd-lbl">{t.cdHours}</div></div>
+            <div className="ev-cd"><div className="ev-cd-num font-serif">{pad(m)}</div><div className="ev-cd-lbl">{t.cdMin}</div></div>
+            <div className="ev-cd"><div className="ev-cd-num font-serif">{pad(s)}</div><div className="ev-cd-lbl">{t.cdSec}</div></div>
           </div>
-          <p className="ev-date">{new Date(revealMs).toLocaleString('id-ID')}</p>
+          <p className="ev-date">{new Date(revealMs).toLocaleString(t.locale)}</p>
 
           {photos.length > 0 ? (
             <div className="ev-masonry-wrap">
@@ -222,12 +226,10 @@ export default function GalleryPage({ albumId }) {
               </div>
             </div>
           ) : (
-            <p className="ev-sub" style={{ marginTop: 22 }}>
-              Kamu belum mengunggah foto.
-            </p>
+            <p className="ev-sub" style={{ marginTop: 22 }}>{t.noUpload}</p>
           )}
 
-          <Link className="ev-gallery-link" href={base}>← Ambil foto</Link>
+          <Link className="ev-gallery-link" href={base}>{t.backTakePhoto}</Link>
         </div>
       </div>
     )
@@ -236,28 +238,29 @@ export default function GalleryPage({ albumId }) {
   // === Sudah dibuka ===
   return (
     <div className="ev compact">
+      <LangToggle lang={lang} onChange={setLang} />
       <div className={heroClass} style={heroStyle} />
       <div className="ev-body wide">
         <div className="ev-spacer" />
-        <div className="ev-kicker">Galeri Acara</div>
+        <div className="ev-kicker">{t.kickerGallery}</div>
         <h1 className="ev-title font-serif">{album.name}</h1>
         <p className="ev-sub">
-          {photos.length} foto{album.visibility === 'private' ? ' (fotomu)' : ' terkumpul'}
+          {album.visibility === 'private' ? t.countYours(photos.length) : t.countCollected(photos.length)}
         </p>
 
         {album.visibility === 'private' ? (
-          <div className="ev-note">🔒 Galeri privat — kamu hanya melihat foto yang kamu unggah.</div>
+          <div className="ev-note">{t.privateNote}</div>
         ) : null}
 
         {photos.length === 0 ? (
-          <p className="ev-sub" style={{ marginTop: 22 }}>Belum ada foto. Jadilah yang pertama!</p>
+          <p className="ev-sub" style={{ marginTop: 22 }}>{t.noPhotos}</p>
         ) : (
           <>
             <button className="ev-download" onClick={downloadAll} disabled={zipping}>
-              {zipping ? 'Menyiapkan…' : `⬇  Unduh semua (${photos.length})`}
+              {zipping ? t.btnPreparing : t.btnDownloadAll(photos.length)}
             </button>
             {album.download_style === 'polaroid' ? (
-              <p className="ev-dl-note">Unduhan memakai bingkai polaroid.</p>
+              <p className="ev-dl-note">{t.polaroidNote}</p>
             ) : null}
             {msg ? <div className="error" style={{ textAlign: 'center' }}>{msg}</div> : null}
 
@@ -275,7 +278,7 @@ export default function GalleryPage({ albumId }) {
           </>
         )}
 
-        <Link className="ev-gallery-link" href={base}>← Ambil foto lagi</Link>
+        <Link className="ev-gallery-link" href={base}>{t.backTakeMore}</Link>
       </div>
     </div>
   )

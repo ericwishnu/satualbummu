@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { processImage, FILM_PRESETS, DEFAULT_PRESET } from '@/lib/filmPresets'
 import { clientUUID } from '@/lib/uuid'
 import { revealTimestamp } from '@/lib/reveal'
+import { getInitialLang, tFor, TIME_UNITS } from '@/lib/i18n'
+import LangToggle from '@/components/LangToggle'
 
 function getGuestId() {
   try {
@@ -19,18 +21,19 @@ function getGuestId() {
   }
 }
 
-// Format sisa waktu jadi ringkas: "1h 21j", "45j 31m", "12m 40d"
-function fmtLeft(ms) {
+// Format sisa waktu ringkas, satuan mengikuti bahasa.
+function fmtLeft(ms, lang) {
   if (ms == null || ms <= 0) return null
+  const u = TIME_UNITS[lang] || TIME_UNITS.en
   const totalMin = Math.floor(ms / 60000)
   const d = Math.floor(totalMin / 1440)
   const h = Math.floor((totalMin % 1440) / 60)
   const m = totalMin % 60
   const s = Math.floor((ms % 60000) / 1000)
-  if (d > 0) return `${d}h ${h}j`
-  if (h > 0) return `${h}j ${m}m`
-  if (m > 0) return `${m}m ${s}d`
-  return `${s}d`
+  if (d > 0) return `${d}${u.d} ${h}${u.h}`
+  if (h > 0) return `${h}${u.h} ${m}${u.m}`
+  if (m > 0) return `${m}${u.m} ${s}${u.s}`
+  return `${s}${u.s}`
 }
 
 const CameraIcon = () => (
@@ -52,13 +55,16 @@ export default function CapturePage({ albumId }) {
   const [err, setErr] = useState('')
   const [sentThumbs, setSentThumbs] = useState([])
   const [now, setNow] = useState(0)
+  const [lang, setLang] = useState('en')
   const fileRef = useRef(null)
+  const t = tFor(lang)
 
   const max = album && album.max_per_guest ? album.max_per_guest : null
   const remaining = max == null ? Infinity : Math.max(0, max - used)
   const limitReached = max != null && remaining <= 0
 
   useEffect(() => {
+    setLang(getInitialLang())
     const gid = getGuestId()
     setGuestId(gid)
     setNow(Date.now())
@@ -83,15 +89,15 @@ export default function CapturePage({ albumId }) {
     }
     load()
 
-    const t = setInterval(() => setNow(Date.now()), 1000)
-    return () => clearInterval(t)
+    const timer = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(timer)
   }, [albumId])
 
   async function handleFiles(e) {
     let files = Array.from(e.target.files || [])
     if (!files.length) return
     if (!name.trim()) {
-      setErr('Isi namamu dulu ya, biar tahu siapa yang motret.')
+      setErr(t.errName)
       if (fileRef.current) fileRef.current.value = ''
       return
     }
@@ -100,13 +106,13 @@ export default function CapturePage({ albumId }) {
 
     if (max != null) {
       if (remaining <= 0) {
-        setErr('Jatah fotomu untuk album ini sudah habis.')
+        setErr(t.errQuotaFull)
         if (fileRef.current) fileRef.current.value = ''
         return
       }
       if (files.length > remaining) {
         files = files.slice(0, remaining)
-        setMsg(`Jatahmu tinggal ${remaining} foto — hanya ${remaining} foto pertama yang dikirim.`)
+        setMsg(t.msgQuotaLeft(remaining))
       }
     }
 
@@ -129,30 +135,31 @@ export default function CapturePage({ albumId }) {
           try { newThumbs.push(URL.createObjectURL(processed)) } catch (e) {}
         } else {
           const d = await res.json().catch(() => ({}))
-          setErr(d.error || 'Gagal upload sebagian foto.')
+          setErr(d.error || t.errPartial)
         }
       } catch (e) {
-        setErr('Gagal upload: ' + e.message)
+        setErr(t.errUploadPrefix + e.message)
       }
     }
     setUploading(false)
     setUsed((c) => c + ok)
     if (newThumbs.length) setSentThumbs((prev) => [...prev, ...newThumbs])
-    if (ok > 0 && !msg) setMsg(`${ok} foto terkirim! 🎉`)
+    if (ok > 0 && !msg) setMsg(t.msgSent(ok))
     if (fileRef.current) fileRef.current.value = ''
   }
 
   if (loading) {
-    return <p className="sub" style={{ textAlign: 'center', marginTop: 60 }}>Memuat…</p>
+    return <p className="sub" style={{ textAlign: 'center', marginTop: 60 }}>{t.loading}</p>
   }
   if (!album) {
     return (
       <div className="ev">
+        <LangToggle lang={lang} onChange={setLang} />
         <div className="ev-hero noimg" />
         <div className="ev-body">
           <div className="ev-spacer" />
-          <h1 className="ev-title font-serif">Album tidak ditemukan</h1>
-          <p className="ev-sub">Link mungkin salah, atau album sudah dihapus.</p>
+          <h1 className="ev-title font-serif">{t.notFoundTitle}</h1>
+          <p className="ev-sub">{t.notFoundSub}</p>
         </div>
       </div>
     )
@@ -166,15 +173,16 @@ export default function CapturePage({ albumId }) {
 
   // hitung mundur
   const endMs = album.event_end ? new Date(album.event_end).getTime() : null
-  const leftToEnd = endMs != null ? fmtLeft(endMs - now) : null
+  const leftToEnd = endMs != null ? fmtLeft(endMs - now, lang) : null
   const revealMs = revealTimestamp(album)
   const revealed = revealMs == null ? true : now >= revealMs
-  const leftToReveal = revealMs != null && !revealed ? fmtLeft(revealMs - now) : null
+  const leftToReveal = revealMs != null && !revealed ? fmtLeft(revealMs - now, lang) : null
 
-  const capCaption = (album.polaroid_title || '').trim() || 'Momen'
+  const capCaption = (album.polaroid_title || '').trim() || t.capCaptionDefault
 
   return (
     <div className="ev">
+      <LangToggle lang={lang} onChange={setLang} />
       <div
         className={`ev-hero ${hasBg ? '' : 'noimg'}`}
         style={hasBg ? { backgroundImage: `url(${album.bg_path})` } : undefined}
@@ -183,26 +191,24 @@ export default function CapturePage({ albumId }) {
       <div className="ev-body">
         <div className="ev-spacer" />
 
-        <div className="ev-kicker">Kamera Sekali Pakai</div>
+        <div className="ev-kicker">{t.kicker}</div>
         <h1 className="ev-title font-serif">{album.name}</h1>
-        <p className="ev-sub">
-          Abadikan momenmu dari acara ini. Semua foto tergabung dan muncul bareng di galeri.
-        </p>
+        <p className="ev-sub">{t.captureSub}</p>
 
         <div className="ev-stats">
           <div className="ev-stat">
             <div className="ev-stat-num">{used}</div>
-            <div className="ev-stat-lbl">Momen</div>
+            <div className="ev-stat-lbl">{t.statMoments}</div>
           </div>
           <div className="ev-div" />
           <div className="ev-stat">
             <div className="ev-stat-num">{leftToEnd || '∞'}</div>
-            <div className="ev-stat-lbl">Tersisa</div>
+            <div className="ev-stat-lbl">{t.statLeft}</div>
           </div>
           <div className="ev-div" />
           <div className="ev-stat">
             <div className="ev-stat-num">{max != null ? `${used}/${max}` : '∞'}</div>
-            <div className="ev-stat-lbl">Jatah</div>
+            <div className="ev-stat-lbl">{t.statQuota}</div>
           </div>
         </div>
 
@@ -210,7 +216,7 @@ export default function CapturePage({ albumId }) {
           <input
             className="ev-name"
             type="text"
-            placeholder="Tulis namamu…"
+            placeholder={t.namePlaceholder}
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
@@ -229,16 +235,14 @@ export default function CapturePage({ albumId }) {
           <div className="ev-actions">
             <label htmlFor="cam" className={`ev-btn primary ${limitReached || uploading ? 'disabled' : ''}`}>
               <CameraIcon />
-              {limitReached ? 'Jatah habis' : uploading ? 'Mengunggah…' : 'Ambil Foto'}
+              {limitReached ? t.btnQuotaFull : uploading ? t.btnUploading : t.btnTake}
             </label>
-            <label htmlFor="cam" className={`ev-btn ghost ${limitReached || uploading ? 'disabled' : ''}`} aria-label="Pilih dari galeri">
+            <label htmlFor="cam" className={`ev-btn ghost ${limitReached || uploading ? 'disabled' : ''}`} aria-label={t.ghostAria}>
               ＋
             </label>
           </div>
 
-          <p className="ev-hint">
-            {limitReached ? 'Jatah fotomu sudah habis.' : 'Dari kamera atau pilih dari galeri • bisa banyak sekaligus'}
-          </p>
+          <p className="ev-hint">{limitReached ? t.hintQuotaFull : t.hint}</p>
 
           {err ? <div className="error" style={{ textAlign: 'center' }}>{err}</div> : null}
           {msg ? <div className="ok" style={{ textAlign: 'center' }}>{msg}</div> : null}
@@ -246,19 +250,19 @@ export default function CapturePage({ albumId }) {
 
         <div className="ev-badges">
           {presetLabel ? <span className="ev-badge">🎞️ {presetLabel}</span> : null}
-          <span className="ev-badge">{album.visibility === 'private' ? '🔒 Privat' : '🌐 Publik'}</span>
+          <span className="ev-badge">{album.visibility === 'private' ? t.badgePrivate : t.badgePublic}</span>
         </div>
 
         {leftToReveal ? (
           <div className="ev-reveal">
-            <div className="ev-reveal-lbl">Foto terungkap dalam</div>
+            <div className="ev-reveal-lbl">{t.revealLabel}</div>
             <div className="ev-reveal-num font-serif">{leftToReveal}</div>
           </div>
         ) : null}
 
         {sentThumbs.length > 0 ? (
           <>
-            <div className="ev-sent-lbl">Foto yang kamu kirim</div>
+            <div className="ev-sent-lbl">{t.sentLabel}</div>
             <div className="ev-polas">
               {sentThumbs.slice(-6).map((u, i) => (
                 <div className="ev-pola" key={i}>
@@ -271,7 +275,7 @@ export default function CapturePage({ albumId }) {
         ) : null}
 
         <Link className="ev-gallery-link" href={`${base}/galeri`}>
-          Lihat galeri →
+          {t.galleryLink}
         </Link>
       </div>
     </div>
