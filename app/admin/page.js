@@ -162,7 +162,7 @@ export default function Admin() {
             ))}
           </select>
           <p className="sub" style={{ marginTop: 6, fontSize: 12 }}>
-            Sebelum dibuka, tiap tamu hanya melihat fotonya sendiri dalam keadaan blur.
+            Sebelum dibuka, tiap tamu hanya melihat fotonya sendiri dalam keadaan blur. Unggahan tamu otomatis ditutup saat galeri dibuka.
           </p>
 
           <label>Batas foto per tamu (opsional)</label>

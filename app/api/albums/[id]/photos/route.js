@@ -67,12 +67,21 @@ export async function POST(req, { params }) {
   try {
     const pool = getPool()
 
-    const album = await resolveAlbum(pool, params.id, 'id, max_per_guest')
+    const album = await resolveAlbum(pool, params.id, 'id, max_per_guest, event_end, reveal_mode')
     if (!album) {
       return NextResponse.json({ error: 'Album tidak ditemukan.' }, { status: 404 })
     }
     const albumId = album.id
     const maxPerGuest = album.max_per_guest
+
+    // Unggahan ditutup begitu galeri dibuka (reveal). Mode "during" (tanpa reveal) selalu terbuka.
+    const revealT = revealTimestamp(album)
+    if (revealT != null && Date.now() >= revealT) {
+      return NextResponse.json(
+        { error: 'Unggahan sudah ditutup — galeri sudah dibuka.', closed: true },
+        { status: 403 }
+      )
+    }
 
     const form = await req.formData()
     const file = form.get('file')

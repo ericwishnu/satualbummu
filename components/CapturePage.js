@@ -138,6 +138,12 @@ export default function CapturePage({ albumId }) {
     const input = e.target
     let files = Array.from(input.files || [])
     if (!files.length) return
+    const rt = revealTimestamp(album)
+    if (rt != null && Date.now() >= rt) {
+      setErr(t.errClosed)
+      input.value = ''
+      return
+    }
     if (!name.trim()) {
       setErr(t.errName)
       input.value = ''
@@ -220,6 +226,8 @@ export default function CapturePage({ albumId }) {
   const revealMs = revealTimestamp(album)
   const revealed = revealMs == null ? true : now >= revealMs
   const leftToReveal = revealMs != null && !revealed ? fmtLeft(revealMs - now, lang) : null
+  const uploadsClosed = revealMs != null && now >= revealMs
+  const camDisabled = limitReached || uploading || uploadsClosed
 
   const capCaption = (album.polaroid_title || '').trim() || t.capCaptionDefault
 
@@ -290,7 +298,7 @@ export default function CapturePage({ albumId }) {
             type="file"
             accept="image/*"
             capture="environment"
-            disabled={limitReached || uploading}
+            disabled={camDisabled}
             onChange={handleFiles}
             style={{ display: 'none' }}
           />
@@ -300,25 +308,25 @@ export default function CapturePage({ albumId }) {
             type="file"
             accept="image/*"
             multiple
-            disabled={limitReached || uploading}
+            disabled={camDisabled}
             onChange={handleFiles}
             style={{ display: 'none' }}
           />
 
           <div className="ev-actions">
-            <label htmlFor="cam-camera" className={`ev-btn primary ${limitReached || uploading ? 'disabled' : ''}`}>
+            <label htmlFor="cam-camera" className={`ev-btn primary ${camDisabled ? 'disabled' : ''}`}>
               <CameraIcon />
-              {limitReached ? t.btnQuotaFull : uploading ? t.btnUploading : t.btnTake}
+              {uploadsClosed ? t.btnClosed : limitReached ? t.btnQuotaFull : uploading ? t.btnUploading : t.btnTake}
             </label>
             <button type="button" className="ev-btn ghost" aria-label={t.qrAria} onClick={() => setShowQR(true)}>
               <QrIcon />
             </button>
-            <label htmlFor="cam-gallery" className={`ev-btn ghost ${limitReached || uploading ? 'disabled' : ''}`} aria-label={t.ghostAria}>
+            <label htmlFor="cam-gallery" className={`ev-btn ghost ${camDisabled ? 'disabled' : ''}`} aria-label={t.ghostAria}>
               <GalleryIcon />
             </label>
           </div>
 
-          <p className="ev-hint">{limitReached ? t.hintQuotaFull : t.hint}</p>
+          <p className="ev-hint">{uploadsClosed ? t.hintClosed : limitReached ? t.hintQuotaFull : t.hint}</p>
 
           {err ? <div className="error" style={{ textAlign: 'center' }}>{err}</div> : null}
           {msg ? <div className="ok" style={{ textAlign: 'center' }}>{msg}</div> : null}

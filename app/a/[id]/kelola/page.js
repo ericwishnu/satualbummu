@@ -267,6 +267,7 @@ export default function Kelola({ params }) {
               <option key={o.value} value={o.value}>{o.label}</option>
             ))}
           </select>
+          <p className="sub" style={{ marginTop: 6, fontSize: 12 }}>Unggahan tamu otomatis ditutup saat galeri dibuka.</p>
 
           <label>Batas foto per tamu (kosongkan = tanpa batas)</label>
           <input type="number" min="1" placeholder="mis. 10" value={maxInput} onChange={(e) => setMaxInput(e.target.value)} />
