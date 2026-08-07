@@ -16,7 +16,8 @@ export default function Cetak({ params }) {
     fetch(`/api/albums/${albumId}`).then((r) => (r.ok ? r.json() : null)).then((d) => setAlbum(d)).catch(() => {})
   }, [albumId])
 
-  const captureUrl = origin ? `${origin}/a/${albumId}` : ''
+  const capturePath = album?.slug ? `/event/${album.slug}` : `/a/${albumId}`
+  const captureUrl = origin ? `${origin}${capturePath}` : ''
 
   return (
     <div className="cetak-wrap">

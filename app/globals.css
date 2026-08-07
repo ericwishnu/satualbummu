@@ -304,6 +304,24 @@ input::placeholder { color: #6b6b70; }
 }
 .copyrow .btn { width: auto; margin-top: 0; padding: 0 16px; white-space: nowrap; }
 
+/* input slug kustom */
+.slug-field {
+  display: flex; align-items: stretch;
+  border: 1px solid var(--line); border-radius: 10px;
+  overflow: hidden; background: #0f0f10;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.slug-field:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(255,255,255,0.14); }
+.slug-prefix {
+  display: flex; align-items: center;
+  padding: 0 4px 0 12px; color: var(--muted);
+  font-size: 13px; white-space: nowrap; max-width: 52%;
+  overflow: hidden; text-overflow: ellipsis;
+  font-family: ui-monospace, Menlo, monospace;
+}
+.slug-field input { border: none !important; border-radius: 0; background: transparent; padding-left: 2px; }
+.slug-field input:focus { box-shadow: none !important; }
+
 /* --- Galeri terkunci (blur) --- */
 .m-dl { border: none; cursor: pointer; font-family: inherit; }
 .masonry.blurred .m-item { pointer-events: none; }
@@ -564,6 +582,80 @@ input::placeholder { color: #6b6b70; }
   border-bottom: 1px solid rgba(244,244,245,0.3);
   padding-bottom: 2px;
 }
+
+/* --- Galeri elegan --- */
+.ev.compact .ev-hero { height: 44vh; }
+.ev.compact .ev-spacer { height: 26vh; }
+.ev-body.wide { max-width: 640px; }
+
+/* tombol unduh semua (block, elegan) */
+.ev-download {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 420px;
+  margin: 22px auto 4px;
+  padding: 15px 20px;
+  border-radius: 14px;
+  border: none;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 700;
+  color: #17171a;
+  background: #fff;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.4);
+}
+.ev-download:disabled { opacity: 0.6; cursor: not-allowed; }
+.ev-dl-note { font-size: 12px; color: rgba(244,244,245,0.6); margin: 8px 0 0; }
+
+/* hitung mundur elegan (tiles kaca) */
+.ev-cd-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  max-width: 420px;
+  margin: 26px auto 0;
+}
+.ev-cd {
+  background: rgba(20,20,22,0.55);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(244,244,245,0.14);
+  border-radius: 14px;
+  padding: 16px 4px 12px;
+}
+.ev-cd-num {
+  font-size: 30px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.ev-cd-lbl {
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: rgba(244,244,245,0.6);
+  margin-top: 8px;
+}
+.ev-date {
+  font-size: 13px;
+  color: rgba(244,244,245,0.62);
+  margin: 14px 0 0;
+}
+.ev-note {
+  display: inline-block;
+  margin: 10px auto 0;
+  font-size: 12.5px;
+  color: rgba(244,244,245,0.7);
+}
+
+/* masonry di dalam galeri elegan */
+.ev-masonry-wrap { margin-top: 22px; text-align: left; }
+.ev .masonry { margin-top: 0; }
+.ev .m-item { border-color: rgba(244,244,245,0.12); }
 
 /* --- Kartu QR siap cetak --- */
 .print-card {

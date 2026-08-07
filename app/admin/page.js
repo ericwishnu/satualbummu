@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { FILM_PRESETS, DEFAULT_PRESET } from '@/lib/filmPresets'
 import { REVEAL_OPTIONS } from '@/lib/reveal'
+import { normalizeSlug } from '@/lib/slug'
 import { BrandLogo, BrandName } from '@/components/BrandProvider'
 
 export default function Admin() {
@@ -13,6 +14,7 @@ export default function Admin() {
   const [loading, setLoading] = useState(true)
 
   const [name, setName] = useState('')
+  const [slug, setSlug] = useState('')
   const [preset, setPreset] = useState(DEFAULT_PRESET)
   const [visibility, setVisibility] = useState('public')
   const [eventEnd, setEventEnd] = useState('')
@@ -56,6 +58,7 @@ export default function Admin() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: name.trim(),
+          slug: normalizeSlug(slug),
           film_preset: preset,
           visibility,
           event_end: eventEnd ? new Date(eventEnd).toISOString() : null,
@@ -131,6 +134,10 @@ export default function Admin() {
         <form onSubmit={createAlbum}>
           <label>Nama acara</label>
           <input type="text" placeholder="Ulang Tahun ke-30 / Trip Bali" value={name} onChange={(e) => setName(e.target.value)} />
+
+          <label>Link kustom (slug) — opsional</label>
+          <input type="text" placeholder="EricChelseaWedding" value={slug} onChange={(e) => setSlug(e.target.value)} />
+          <p className="sub" style={{ marginTop: 6, fontSize: 12 }}>Kosongkan untuk pakai link default. Bisa diubah nanti di Kelola.</p>
 
           <label>Filter film (dipakai untuk semua foto)</label>
           <select value={preset} onChange={(e) => setPreset(e.target.value)}>

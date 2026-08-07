@@ -5,6 +5,7 @@ import path from 'path'
 import { getPool } from '@/lib/db'
 import { requireAdmin } from '@/lib/auth'
 import { revealTimestamp } from '@/lib/reveal'
+import { resolveAlbum } from '@/lib/albums'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -12,18 +13,22 @@ export const dynamic = 'force-dynamic'
 const COLS = 'id, storage_path, uploader_name, guest_id, created_at'
 
 // GET /api/albums/:id/photos?guest_id=... — daftar foto (dengan aturan privasi)
+// - admin: semua foto
+// - privat, atau sebelum galeri dibuka: hanya foto milik guest_id
+// - publik & sudah dibuka: semua foto
 export async function GET(req, { params }) {
   try {
     const { searchParams } = new URL(req.url)
     const gid = searchParams.get('guest_id') || null
 
     const pool = getPool()
-    const [albs] = await pool.execute(
-      'SELECT id, event_end, reveal_mode, visibility FROM albums WHERE id = ? LIMIT 1',
-      [params.id]
+    const album = await resolveAlbum(
+      pool,
+      params.id,
+      'id, event_end, reveal_mode, visibility'
     )
-    if (!albs.length) return NextResponse.json([])
-    const album = albs[0]
+    if (!album) return NextResponse.json([])
+    const albumId = album.id
 
     const admin = requireAdmin(req)
     const t = revealTimestamp(album)
@@ -33,21 +38,22 @@ export async function GET(req, { params }) {
     if (admin) {
       ;[rows] = await pool.execute(
         `SELECT ${COLS} FROM photos WHERE album_id = ? ORDER BY created_at ASC`,
-        [params.id]
+        [albumId]
       )
     } else if (album.visibility === 'private' || !revealed) {
+      // tamu hanya boleh melihat fotonya sendiri
       if (!gid) {
         rows = []
       } else {
         ;[rows] = await pool.execute(
           `SELECT ${COLS} FROM photos WHERE album_id = ? AND guest_id = ? ORDER BY created_at ASC`,
-          [params.id, gid]
+          [albumId, gid]
         )
       }
     } else {
       ;[rows] = await pool.execute(
         `SELECT ${COLS} FROM photos WHERE album_id = ? ORDER BY created_at ASC`,
-        [params.id]
+        [albumId]
       )
     }
     return NextResponse.json(rows)
@@ -59,17 +65,14 @@ export async function GET(req, { params }) {
 // POST /api/albums/:id/photos — unggah satu foto (multipart/form-data)
 export async function POST(req, { params }) {
   try {
-    const albumId = params.id
     const pool = getPool()
 
-    const [albs] = await pool.execute(
-      'SELECT id, max_per_guest FROM albums WHERE id = ? LIMIT 1',
-      [albumId]
-    )
-    if (!albs.length) {
+    const album = await resolveAlbum(pool, params.id, 'id, max_per_guest')
+    if (!album) {
       return NextResponse.json({ error: 'Album tidak ditemukan.' }, { status: 404 })
     }
-    const maxPerGuest = albs[0].max_per_guest
+    const albumId = album.id
+    const maxPerGuest = album.max_per_guest
 
     const form = await req.formData()
     const file = form.get('file')

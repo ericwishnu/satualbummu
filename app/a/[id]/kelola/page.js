@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { QRCodeCanvas } from 'qrcode.react'
 import { FILM_PRESETS } from '@/lib/filmPresets'
 import { REVEAL_OPTIONS } from '@/lib/reveal'
+import { normalizeSlug } from '@/lib/slug'
 
 function toLocalInput(iso) {
   if (!iso) return ''
@@ -28,6 +29,7 @@ export default function Kelola({ params }) {
   const [polaroidTitle, setPolaroidTitle] = useState('')
   const [polaroidSubtitle, setPolaroidSubtitle] = useState('')
   const [maxInput, setMaxInput] = useState('')
+  const [slug, setSlug] = useState('')
   const [savingSettings, setSavingSettings] = useState(false)
   const [savedMsg, setSavedMsg] = useState('')
   const [settingsErr, setSettingsErr] = useState('')
@@ -61,6 +63,7 @@ export default function Kelola({ params }) {
           setPolaroidTitle(data?.polaroid_title || '')
           setPolaroidSubtitle(data?.polaroid_subtitle || '')
           setBgPath(data?.bg_path || null)
+          setSlug(data?.slug || '')
           setMaxInput(data?.max_per_guest ? String(data.max_per_guest) : '')
         }
       } catch (e) {}
@@ -69,7 +72,11 @@ export default function Kelola({ params }) {
     loadStats()
   }, [albumId])
 
-  const captureUrl = origin ? `${origin}/a/${albumId}` : ''
+  // slug tersimpan (dari album) menentukan URL cantik; input `slug` bisa berbeda sebelum disimpan.
+  const savedSlug = album?.slug || ''
+  const capturePath = savedSlug ? `/event/${savedSlug}` : `/a/${albumId}`
+  const captureUrl = origin ? `${origin}${capturePath}` : ''
+  const slugPreview = origin ? `${origin}/event/${normalizeSlug(slug) || '…'}` : ''
 
   const total = photos.length
   const contributors = new Set(photos.map((p) => p.guest_id || p.uploader_name || 'anon')).size
@@ -118,6 +125,7 @@ export default function Kelola({ params }) {
           polaroid_title: polaroidTitle.trim(),
           polaroid_subtitle: polaroidSubtitle.trim(),
           max_per_guest: maxInput ? parseInt(maxInput, 10) : null,
+          slug: normalizeSlug(slug),
         }),
       })
       const data = await res.json()
@@ -127,6 +135,7 @@ export default function Kelola({ params }) {
         return
       }
       setAlbum(data)
+      setSlug(data?.slug || '')
       setSavedMsg('Tersimpan ✓')
       setTimeout(() => setSavedMsg(''), 2000)
     } catch (e) {
@@ -216,6 +225,22 @@ export default function Kelola({ params }) {
         <h2 className="section-title">Pengaturan</h2>
         <p className="sub" style={{ fontSize: 13 }}>Filter foto album ini: <strong>{presetLabel}</strong></p>
         <form onSubmit={saveSettings}>
+          <label>Link kustom (slug)</label>
+          <div className="slug-field">
+            <span className="slug-prefix">{origin ? origin.replace(/^https?:\/\//, '') : ''}/event/</span>
+            <input
+              type="text"
+              placeholder="EricChelseaWedding"
+              value={slug}
+              onChange={(e) => setSlug(e.target.value)}
+            />
+          </div>
+          <p className="sub" style={{ marginTop: 6, fontSize: 12 }}>
+            {slug.trim()
+              ? <>Tamu bisa buka: <strong>{slugPreview}</strong></>
+              : <>Kosongkan untuk memakai link default. Huruf, angka, - dan _ saja.</>}
+          </p>
+
           <label>Visibilitas galeri</label>
           <select value={visibility} onChange={(e) => setVisibility(e.target.value)}>
             <option value="public">Publik — semua tamu melihat semua foto</option>
