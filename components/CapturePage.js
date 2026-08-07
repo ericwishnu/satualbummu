@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
+import { QRCodeCanvas } from 'qrcode.react'
 import { processImage, FILM_PRESETS, DEFAULT_PRESET } from '@/lib/filmPresets'
 import { clientUUID } from '@/lib/uuid'
 import { revealTimestamp } from '@/lib/reveal'
@@ -43,6 +44,42 @@ const CameraIcon = () => (
   </svg>
 )
 
+const QrIcon = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <path d="M3 3h8v8H3V3zm2 2v4h4V5H5z" />
+    <path d="M13 3h8v8h-8V3zm2 2v4h4V5h-4z" />
+    <path d="M3 13h8v8H3v-8zm2 2v4h4v-4H5z" />
+    <rect x="13" y="13" width="3.2" height="3.2" />
+    <rect x="17.8" y="13" width="3.2" height="3.2" />
+    <rect x="13" y="17.8" width="3.2" height="3.2" />
+    <rect x="17.8" y="17.8" width="3.2" height="3.2" />
+  </svg>
+)
+
+const GalleryIcon = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <rect x="3" y="5" width="13" height="13" rx="2.2" />
+    <circle cx="8.4" cy="10" r="1.4" />
+    <path d="M3.5 16.5l3.6-3.4L11 16.5l2-1.9 3 2.9" />
+    <path d="M19 3.5v5M21.5 6h-5" />
+  </svg>
+)
+
+const LinkIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 1 0-7.07-7.07L11 4.93" />
+    <path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 1 0 7.07 7.07L12 20" />
+  </svg>
+)
+
+const DownloadIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 3v12" />
+    <path d="M7 11l5 5 5-5" />
+    <path d="M5 21h14" />
+  </svg>
+)
+
 // albumId bisa berupa UUID atau slug kustom — keduanya diterima API.
 export default function CapturePage({ albumId }) {
   const [album, setAlbum] = useState(null)
@@ -56,6 +93,10 @@ export default function CapturePage({ albumId }) {
   const [sentThumbs, setSentThumbs] = useState([])
   const [now, setNow] = useState(0)
   const [lang, setLang] = useState('en')
+  const [showQR, setShowQR] = useState(false)
+  const [copied, setCopied] = useState(false)
+  const [origin, setOrigin] = useState('')
+  const qrRef = useRef(null)
   const t = tFor(lang)
 
   const max = album && album.max_per_guest ? album.max_per_guest : null
@@ -64,6 +105,7 @@ export default function CapturePage({ albumId }) {
 
   useEffect(() => {
     setLang(getInitialLang())
+    setOrigin(window.location.origin)
     const gid = getGuestId()
     setGuestId(gid)
     setNow(Date.now())
@@ -167,6 +209,7 @@ export default function CapturePage({ albumId }) {
 
   // Link antar-halaman pakai slug kalau ada, biar tetap cantik.
   const base = album.slug ? `/event/${album.slug}` : `/a/${albumId}`
+  const shareUrl = origin ? `${origin}${base}` : base
 
   const presetLabel = FILM_PRESETS[album.film_preset]?.label
   const hasBg = !!album.bg_path
@@ -179,6 +222,26 @@ export default function CapturePage({ albumId }) {
   const leftToReveal = revealMs != null && !revealed ? fmtLeft(revealMs - now, lang) : null
 
   const capCaption = (album.polaroid_title || '').trim() || t.capCaptionDefault
+
+  async function shareLink() {
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try { await navigator.share({ title: album.name, url: shareUrl }); return } catch (e) {}
+    }
+    try {
+      await navigator.clipboard.writeText(shareUrl)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1600)
+    } catch (e) {}
+  }
+
+  function saveQR() {
+    const canvas = qrRef.current?.querySelector('canvas')
+    if (!canvas) return
+    const a = document.createElement('a')
+    a.download = `qr-${(album.slug || album.name || 'acara').replace(/[^a-z0-9]/gi, '_')}.png`
+    a.href = canvas.toDataURL('image/png')
+    a.click()
+  }
 
   return (
     <div className="ev">
@@ -247,8 +310,11 @@ export default function CapturePage({ albumId }) {
               <CameraIcon />
               {limitReached ? t.btnQuotaFull : uploading ? t.btnUploading : t.btnTake}
             </label>
+            <button type="button" className="ev-btn ghost" aria-label={t.qrAria} onClick={() => setShowQR(true)}>
+              <QrIcon />
+            </button>
             <label htmlFor="cam-gallery" className={`ev-btn ghost ${limitReached || uploading ? 'disabled' : ''}`} aria-label={t.ghostAria}>
-              ＋
+              <GalleryIcon />
             </label>
           </div>
 
@@ -288,6 +354,29 @@ export default function CapturePage({ albumId }) {
           {t.galleryLink}
         </Link>
       </div>
+
+      {showQR ? (
+        <div className="qr-overlay" onClick={() => setShowQR(false)}>
+          <div className="qr-sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="qr-grip" />
+            <h2 className="qr-title font-serif">{t.inviteTitle}</h2>
+            <p className="qr-sub">{t.inviteSub}</p>
+            <hr className="qr-line" />
+            <div className="qr-card" ref={qrRef}>
+              <QRCodeCanvas value={shareUrl} size={230} includeMargin level="M" />
+            </div>
+            <div className="qr-actions">
+              <button type="button" className="qr-act" onClick={shareLink}>
+                <LinkIcon /> {t.shareLink}
+              </button>
+              <button type="button" className="qr-act" onClick={saveQR}>
+                <DownloadIcon /> {t.saveQR}
+              </button>
+            </div>
+            {copied ? <div className="qr-copied">{t.linkCopied}</div> : null}
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }
