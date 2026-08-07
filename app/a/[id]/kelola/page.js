@@ -36,6 +36,8 @@ export default function Kelola({ params }) {
   const [settingsErr, setSettingsErr] = useState('')
   const [bgPath, setBgPath] = useState(null)
   const [bgMsg, setBgMsg] = useState('')
+  const [confirmId, setConfirmId] = useState(null)
+  const [deleting, setDeleting] = useState(false)
 
   const qrWrapRef = useRef(null)
   const bgRef = useRef(null)
@@ -172,6 +174,16 @@ export default function Kelola({ params }) {
     } catch (e) {}
   }
 
+  async function deletePhoto(id) {
+    setDeleting(true)
+    try {
+      const res = await fetch(`/api/albums/${albumId}/photos/${id}`, { method: 'DELETE' })
+      if (res.ok) setPhotos((prev) => prev.filter((p) => p.id !== id))
+    } catch (e) {}
+    setConfirmId(null)
+    setDeleting(false)
+  }
+
   return (
     <div>
       <div className="page-head">
@@ -221,6 +233,35 @@ export default function Kelola({ params }) {
         <button className="btn secondary" onClick={loadStats} style={{ marginTop: 14 }}>
           ↻ Segarkan statistik
         </button>
+      </div>
+
+      <div className="card">
+        <h2 className="section-title">Kelola foto {loadingStats ? '' : `(${photos.length})`}</h2>
+        {loadingStats ? (
+          <p className="sub" style={{ margin: 0 }}>Memuat…</p>
+        ) : photos.length === 0 ? (
+          <p className="sub" style={{ margin: 0 }}>Belum ada foto.</p>
+        ) : (
+          <div className="pm-grid">
+            {photos.map((p) => (
+              <div className="pm-item" key={p.id}>
+                <img src={p.storage_path} alt={p.uploader_name || 'foto'} loading="lazy" />
+                {p.uploader_name ? <span className="pm-who">{p.uploader_name}</span> : null}
+                <button className="pm-del" onClick={() => setConfirmId(p.id)} title="Hapus" aria-label="Hapus foto">🗑</button>
+                {confirmId === p.id ? (
+                  <div className="pm-confirm">
+                    <div className="q">Hapus foto ini?</div>
+                    <div className="row">
+                      <button className="pm-yes" disabled={deleting} onClick={() => deletePhoto(p.id)}>{deleting ? '…' : 'Hapus'}</button>
+                      <button className="pm-no" onClick={() => setConfirmId(null)}>Batal</button>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        )}
+        <p className="sub" style={{ marginTop: 12, fontSize: 12 }}>Menghapus foto bersifat permanen — file ikut terhapus dari server.</p>
       </div>
 
       <div className="card">

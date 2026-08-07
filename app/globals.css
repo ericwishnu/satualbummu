@@ -750,6 +750,38 @@ input::placeholder { color: #6b6b70; }
   margin-top: 5px;
 }
 
+/* --- Kelola foto (hapus) --- */
+.pm-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+.pm-item {
+  position: relative; aspect-ratio: 1; border-radius: 10px; overflow: hidden;
+  border: 1px solid var(--line); background: #0a0a0b;
+}
+.pm-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pm-del {
+  position: absolute; top: 6px; right: 6px;
+  width: 30px; height: 30px; border-radius: 8px; border: none;
+  background: rgba(0,0,0,0.6); color: #fff; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; font-size: 15px;
+  -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+}
+.pm-del:hover { background: rgba(229,72,77,0.85); }
+.pm-who {
+  position: absolute; left: 6px; bottom: 6px; max-width: 78%;
+  background: rgba(0,0,0,0.55); color: #fff; font-size: 10px;
+  padding: 2px 6px; border-radius: 6px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.pm-confirm {
+  position: absolute; inset: 0; background: rgba(0,0,0,0.74);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  padding: 8px; text-align: center;
+}
+.pm-confirm .q { color: #fff; font-size: 12px; line-height: 1.3; }
+.pm-confirm .row { display: flex; gap: 6px; }
+.pm-confirm button { padding: 6px 12px; border-radius: 8px; border: none; font-size: 12px; font-weight: 700; cursor: pointer; }
+.pm-yes { background: #e5484d; color: #fff; }
+.pm-no { background: #2a2a2d; color: var(--text); }
+
 /* --- Kartu QR siap cetak --- */
 .print-card {
   background: #ffffff; color: #1a1712; border-radius: 20px;
