@@ -811,6 +811,47 @@ input::placeholder { color: #6b6b70; }
   .ev.admin .masonry { column-count: 5; }
 }
 
+/* --- Layar tayang (proyektor) --- */
+.screen {
+  width: 100vw;
+  margin: -24px 0 -60px;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  min-height: 100vh;
+  background: #0b0b0c;
+  padding: 14px 16px 30px;
+  box-sizing: border-box;
+}
+.screen-head { text-align: center; padding: 6px 0 16px; }
+.screen-title { font-size: 30px; color: #fff; letter-spacing: 0.3px; line-height: 1.1; }
+.screen-sub { color: #8a8a90; font-size: 13px; margin-top: 6px; }
+.screen-live {
+  display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+  background: #e5484d; margin-right: 6px; vertical-align: middle;
+  animation: screen-pulse 1.6s ease-in-out infinite;
+}
+@keyframes screen-pulse { 0%,100% { opacity: 1 } 50% { opacity: 0.25 } }
+
+.screen-grid { column-count: 2; column-gap: 10px; }
+@media (min-width: 640px) { .screen-grid { column-count: 3; } }
+@media (min-width: 900px) { .screen-grid { column-count: 4; } .screen-title { font-size: 40px; } }
+@media (min-width: 1280px) { .screen-grid { column-count: 5; } }
+@media (min-width: 1700px) { .screen-grid { column-count: 6; } }
+
+.screen-item {
+  position: relative; break-inside: avoid; margin-bottom: 10px;
+  border-radius: 10px; overflow: hidden; background: #0a0a0b;
+  animation: screen-in 0.5s ease;
+}
+@keyframes screen-in { from { opacity: 0; transform: scale(0.96) } to { opacity: 1; transform: none } }
+.screen-item img { width: 100%; display: block; }
+.screen-name {
+  position: absolute; left: 8px; bottom: 8px;
+  background: rgba(0, 0, 0, 0.5); color: #fff; font-size: 16px; line-height: 1;
+  padding: 4px 10px; border-radius: 20px;
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+}
+
 /* --- Kartu QR siap cetak --- */
 .print-card {
   background: #ffffff; color: #1a1712; border-radius: 20px;

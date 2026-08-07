@@ -46,7 +46,7 @@ export async function middleware(req) {
 
   // Halaman admin, "kelola", & "cetak" album hanya untuk admin.
   const isAdminPath = pathname === '/admin' || pathname.startsWith('/admin/')
-  const isAlbumAdmin = /^\/a\/[^/]+\/(kelola|cetak|semua)\/?$/.test(pathname)
+  const isAlbumAdmin = /^\/a\/[^/]+\/(kelola|cetak|semua|layar)\/?$/.test(pathname)
   if (isAdminPath || isAlbumAdmin) {
     if (!authed) {
       const url = req.nextUrl.clone()
@@ -59,5 +59,5 @@ export async function middleware(req) {
 }
 
 export const config = {
-  matcher: ['/', '/admin', '/admin/:path*', '/a/:id/kelola', '/a/:id/cetak', '/a/:id/semua'],
+  matcher: ['/', '/admin', '/admin/:path*', '/a/:id/kelola', '/a/:id/cetak', '/a/:id/semua', '/a/:id/layar'],
 }

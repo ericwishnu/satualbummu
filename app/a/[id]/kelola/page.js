@@ -348,7 +348,8 @@ export default function Kelola({ params }) {
       </div>
 
       <div className="card">
-        <Link className="btn" href={`/a/${albumId}/semua`}>🖼 Semua foto (tampilan admin)</Link>
+        <Link className="btn" href={`/a/${albumId}/layar`}>📺 Layar tayang untuk proyektor (live)</Link>
+        <Link className="btn secondary" href={`/a/${albumId}/semua`} style={{ marginTop: 10 }}>🖼 Semua foto (kelola: unduh/hapus)</Link>
         <Link className="btn secondary" href={`/a/${albumId}/cetak`} style={{ marginTop: 10 }}>🖨 Kartu QR untuk dicetak</Link>
         <Link className="btn secondary" href={`/a/${albumId}/galeri`} style={{ marginTop: 10 }}>Lihat galeri (tampilan tamu)</Link>
         <Link className="btn secondary" href={`/a/${albumId}`} style={{ marginTop: 10 }}>Halaman ambil foto</Link>
