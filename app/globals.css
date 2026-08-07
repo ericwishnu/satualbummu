@@ -467,13 +467,15 @@ input::placeholder { color: #6b6b70; }
   align-items: center;
   justify-content: center;
   gap: 10px;
-  padding: 16px 18px;
+  height: 58px;
+  padding: 0 18px;
   border-radius: 14px;
   border: none;
   cursor: pointer;
   font-size: 16px;
   font-weight: 700;
   text-decoration: none;
+  box-sizing: border-box;
 }
 .ev-btn.primary {
   background: #fff;
@@ -483,7 +485,8 @@ input::placeholder { color: #6b6b70; }
 .ev-btn.primary:active { transform: scale(0.99); }
 .ev-btn.ghost {
   flex: 0 0 auto;
-  width: 56px;
+  width: 58px;
+  padding: 0;
   background: rgba(20,20,22,0.72);
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
