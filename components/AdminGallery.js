@@ -112,7 +112,7 @@ export default function AdminGallery({ albumId }) {
   const heroClass = `ev-hero ${hasBg ? '' : 'noimg'}`
 
   return (
-    <div className="ev compact">
+    <div className="ev compact admin">
       <div className={heroClass} style={heroStyle} />
       <div className="ev-body wide">
         <div className="ev-spacer" />

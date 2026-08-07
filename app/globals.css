@@ -19,6 +19,7 @@ html, body {
   color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
 
 .container {
@@ -791,6 +792,24 @@ input::placeholder { color: #6b6b70; }
   -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
 }
 .m-del-btn:hover { background: rgba(229, 72, 77, 0.85); }
+
+/* --- Galeri admin: layout lebar untuk desktop --- */
+@media (min-width: 900px) {
+  .ev.admin {
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
+    margin-right: calc(50% - 50vw);
+  }
+  .ev.admin .ev-hero { height: 40vh; }
+  .ev.admin .ev-spacer { height: 20vh; }
+  .ev.admin .ev-body.wide { max-width: 1160px; padding: 0 32px; }
+  .ev.admin .masonry { column-count: 4; }
+  .ev.admin .m-chip { font-size: 12px; }
+}
+@media (min-width: 1320px) {
+  .ev.admin .ev-body.wide { max-width: 1320px; }
+  .ev.admin .masonry { column-count: 5; }
+}
 
 /* --- Kartu QR siap cetak --- */
 .print-card {
