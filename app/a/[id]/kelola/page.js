@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { QRCodeCanvas } from 'qrcode.react'
-import { FILM_PRESETS } from '@/lib/filmPresets'
+import { FILM_PRESETS, DEFAULT_PRESET } from '@/lib/filmPresets'
 import { REVEAL_OPTIONS } from '@/lib/reveal'
 import { normalizeSlug } from '@/lib/slug'
 
@@ -29,6 +29,7 @@ export default function Kelola({ params }) {
   const [polaroidTitle, setPolaroidTitle] = useState('')
   const [polaroidSubtitle, setPolaroidSubtitle] = useState('')
   const [maxInput, setMaxInput] = useState('')
+  const [preset, setPreset] = useState(DEFAULT_PRESET)
   const [slug, setSlug] = useState('')
   const [savingSettings, setSavingSettings] = useState(false)
   const [savedMsg, setSavedMsg] = useState('')
@@ -64,6 +65,7 @@ export default function Kelola({ params }) {
           setPolaroidSubtitle(data?.polaroid_subtitle || '')
           setBgPath(data?.bg_path || null)
           setSlug(data?.slug || '')
+          setPreset(data?.film_preset || DEFAULT_PRESET)
           setMaxInput(data?.max_per_guest ? String(data.max_per_guest) : '')
         }
       } catch (e) {}
@@ -125,6 +127,7 @@ export default function Kelola({ params }) {
           polaroid_title: polaroidTitle.trim(),
           polaroid_subtitle: polaroidSubtitle.trim(),
           max_per_guest: maxInput ? parseInt(maxInput, 10) : null,
+          film_preset: preset,
           slug: normalizeSlug(slug),
         }),
       })
@@ -136,6 +139,7 @@ export default function Kelola({ params }) {
       }
       setAlbum(data)
       setSlug(data?.slug || '')
+      setPreset(data?.film_preset || DEFAULT_PRESET)
       setSavedMsg('Tersimpan ✓')
       setTimeout(() => setSavedMsg(''), 2000)
     } catch (e) {
@@ -167,8 +171,6 @@ export default function Kelola({ params }) {
       if (res.ok) { setBgPath(null); setBgMsg('Background dihapus ✓') }
     } catch (e) {}
   }
-
-  const presetLabel = album ? (FILM_PRESETS[album.film_preset]?.label || '—') : '…'
 
   return (
     <div>
@@ -223,8 +225,17 @@ export default function Kelola({ params }) {
 
       <div className="card">
         <h2 className="section-title">Pengaturan</h2>
-        <p className="sub" style={{ fontSize: 13 }}>Filter foto album ini: <strong>{presetLabel}</strong></p>
         <form onSubmit={saveSettings}>
+          <label>Filter film (dipakai untuk foto baru)</label>
+          <select value={preset} onChange={(e) => setPreset(e.target.value)}>
+            {Object.entries(FILM_PRESETS).map(([key, p]) => (
+              <option key={key} value={key}>{p.label}</option>
+            ))}
+          </select>
+          <p className="sub" style={{ marginTop: 6, fontSize: 12 }}>
+            Berlaku untuk foto yang diunggah setelah ini. Foto lama tetap dengan filter saat diunggah.
+          </p>
+
           <label>Link kustom (slug)</label>
           <div className="slug-field">
             <span className="slug-prefix">{origin ? origin.replace(/^https?:\/\//, '') : ''}/event/</span>

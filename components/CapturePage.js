@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { processImage, FILM_PRESETS, DEFAULT_PRESET } from '@/lib/filmPresets'
 import { clientUUID } from '@/lib/uuid'
@@ -56,7 +56,6 @@ export default function CapturePage({ albumId }) {
   const [sentThumbs, setSentThumbs] = useState([])
   const [now, setNow] = useState(0)
   const [lang, setLang] = useState('en')
-  const fileRef = useRef(null)
   const t = tFor(lang)
 
   const max = album && album.max_per_guest ? album.max_per_guest : null
@@ -94,11 +93,12 @@ export default function CapturePage({ albumId }) {
   }, [albumId])
 
   async function handleFiles(e) {
-    let files = Array.from(e.target.files || [])
+    const input = e.target
+    let files = Array.from(input.files || [])
     if (!files.length) return
     if (!name.trim()) {
       setErr(t.errName)
-      if (fileRef.current) fileRef.current.value = ''
+      input.value = ''
       return
     }
     setErr('')
@@ -107,7 +107,7 @@ export default function CapturePage({ albumId }) {
     if (max != null) {
       if (remaining <= 0) {
         setErr(t.errQuotaFull)
-        if (fileRef.current) fileRef.current.value = ''
+        input.value = ''
         return
       }
       if (files.length > remaining) {
@@ -145,7 +145,7 @@ export default function CapturePage({ albumId }) {
     setUsed((c) => c + ok)
     if (newThumbs.length) setSentThumbs((prev) => [...prev, ...newThumbs])
     if (ok > 0 && !msg) setMsg(t.msgSent(ok))
-    if (fileRef.current) fileRef.current.value = ''
+    input.value = ''
   }
 
   if (loading) {
@@ -221,9 +221,19 @@ export default function CapturePage({ albumId }) {
             onChange={(e) => setName(e.target.value)}
           />
 
+          {/* Kamera langsung (Android/iOS): capture=environment membuka kamera belakang */}
           <input
-            ref={fileRef}
-            id="cam"
+            id="cam-camera"
+            type="file"
+            accept="image/*"
+            capture="environment"
+            disabled={limitReached || uploading}
+            onChange={handleFiles}
+            style={{ display: 'none' }}
+          />
+          {/* Galeri / berkas: tanpa capture, boleh banyak sekaligus */}
+          <input
+            id="cam-gallery"
             type="file"
             accept="image/*"
             multiple
@@ -233,11 +243,11 @@ export default function CapturePage({ albumId }) {
           />
 
           <div className="ev-actions">
-            <label htmlFor="cam" className={`ev-btn primary ${limitReached || uploading ? 'disabled' : ''}`}>
+            <label htmlFor="cam-camera" className={`ev-btn primary ${limitReached || uploading ? 'disabled' : ''}`}>
               <CameraIcon />
               {limitReached ? t.btnQuotaFull : uploading ? t.btnUploading : t.btnTake}
             </label>
-            <label htmlFor="cam" className={`ev-btn ghost ${limitReached || uploading ? 'disabled' : ''}`} aria-label={t.ghostAria}>
+            <label htmlFor="cam-gallery" className={`ev-btn ghost ${limitReached || uploading ? 'disabled' : ''}`} aria-label={t.ghostAria}>
               ＋
             </label>
           </div>

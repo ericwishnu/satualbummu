@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getPool } from '@/lib/db'
 import { requireAdmin } from '@/lib/auth'
 import { REVEAL_MODES, VISIBILITIES, DOWNLOAD_STYLES } from '@/lib/reveal'
+import { FILM_PRESETS } from '@/lib/filmPresets'
 import { validateSlug } from '@/lib/slug'
 import { resolveAlbum } from '@/lib/albums'
 
@@ -48,42 +49,43 @@ export async function PATCH(req, { params }) {
     const polaroidTitle = (body.polaroid_title || '').toString().trim().slice(0, 80) || null
     const polaroidSubtitle = (body.polaroid_subtitle || '').toString().trim().slice(0, 80) || null
 
+    // Kolom yang selalu diperbarui.
+    const sets = [
+      'event_end = ?', 'reveal_mode = ?', 'visibility = ?', 'download_style = ?',
+      'max_per_guest = ?', 'polaroid_title = ?', 'polaroid_subtitle = ?',
+    ]
+    const vals = [eventEnd, revealMode, visibility, downloadStyle, maxPerGuest, polaroidTitle, polaroidSubtitle]
+
+    // Filter film hanya diproses kalau field-nya dikirim.
+    if (Object.prototype.hasOwnProperty.call(body, 'film_preset')) {
+      if (!Object.keys(FILM_PRESETS).includes(body.film_preset)) {
+        return NextResponse.json({ error: 'Filter film tidak dikenal.' }, { status: 400 })
+      }
+      sets.push('film_preset = ?')
+      vals.push(body.film_preset)
+    }
+
     // Slug hanya diproses kalau field-nya dikirim (agar tidak menimpa tanpa sengaja).
-    let setSlug = false
-    let slugValue = null
     if (Object.prototype.hasOwnProperty.call(body, 'slug')) {
       const v = validateSlug(body.slug)
       if (!v.ok) {
         return NextResponse.json({ error: v.error }, { status: 400 })
       }
-      slugValue = v.slug
-      setSlug = true
-      if (slugValue) {
+      if (v.slug) {
         const [dupes] = await pool.execute(
           'SELECT id FROM albums WHERE slug = ? AND id <> ? LIMIT 1',
-          [slugValue, albumId]
+          [v.slug, albumId]
         )
         if (dupes.length) {
-          return NextResponse.json({ error: `Slug "${slugValue}" sudah dipakai album lain.` }, { status: 409 })
+          return NextResponse.json({ error: `Slug "${v.slug}" sudah dipakai album lain.` }, { status: 409 })
         }
       }
+      sets.push('slug = ?')
+      vals.push(v.slug)
     }
 
-    if (setSlug) {
-      await pool.execute(
-        `UPDATE albums SET event_end = ?, reveal_mode = ?, visibility = ?, download_style = ?, max_per_guest = ?,
-                polaroid_title = ?, polaroid_subtitle = ?, slug = ?
-         WHERE id = ?`,
-        [eventEnd, revealMode, visibility, downloadStyle, maxPerGuest, polaroidTitle, polaroidSubtitle, slugValue, albumId]
-      )
-    } else {
-      await pool.execute(
-        `UPDATE albums SET event_end = ?, reveal_mode = ?, visibility = ?, download_style = ?, max_per_guest = ?,
-                polaroid_title = ?, polaroid_subtitle = ?
-         WHERE id = ?`,
-        [eventEnd, revealMode, visibility, downloadStyle, maxPerGuest, polaroidTitle, polaroidSubtitle, albumId]
-      )
-    }
+    vals.push(albumId)
+    await pool.execute(`UPDATE albums SET ${sets.join(', ')} WHERE id = ?`, vals)
 
     const [rows] = await pool.execute(`SELECT ${COLS} FROM albums WHERE id = ? LIMIT 1`, [albumId])
     return NextResponse.json(rows[0] || {})
