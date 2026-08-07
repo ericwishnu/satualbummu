@@ -51,7 +51,7 @@ export default function GalleryPage({ albumId }) {
   useEffect(() => {
     async function loadAlbum() {
       try {
-        const res = await fetch(`/api/albums/${albumId}`)
+        const res = await fetch(`/api/albums/${albumId}`, { cache: 'no-store' })
         if (res.ok) setAlbum(await res.json())
         else setNotFound(true)
       } catch (e) {
@@ -236,6 +236,7 @@ export default function GalleryPage({ albumId }) {
   }
 
   // === Sudah dibuka ===
+  const polaroid = album.download_style === 'polaroid'
   return (
     <div className="ev compact">
       <LangToggle lang={lang} onChange={setLang} />
@@ -265,14 +266,29 @@ export default function GalleryPage({ albumId }) {
             {msg ? <div className="error" style={{ textAlign: 'center' }}>{msg}</div> : null}
 
             <div className="ev-masonry-wrap">
-              <div className="masonry">
-                {photos.map((p) => (
-                  <div className="m-item" key={p.id}>
-                    <button className="m-dl" onClick={() => downloadOne(p)} title="Unduh">⬇</button>
-                    <img src={p.storage_path} alt={p.uploader_name || 'foto'} loading="lazy" />
-                    {p.uploader_name ? <span className="m-chip">{p.uploader_name}</span> : null}
-                  </div>
-                ))}
+              <div className={`masonry ${polaroid ? 'polaroid' : ''}`}>
+                {photos.map((p) => {
+                  // Caption polaroid sama dengan yang dipakai saat unduhan.
+                  const hasCap = !!(album.polaroid_title || album.polaroid_subtitle)
+                  const capTitle = polaroid ? (hasCap ? (album.polaroid_title || '') : (p.uploader_name || '')) : ''
+                  const capSub = polaroid && hasCap ? (album.polaroid_subtitle || '') : ''
+                  return (
+                    <div className="m-item" key={p.id}>
+                      <button className="m-dl" onClick={() => downloadOne(p)} title="Unduh">⬇</button>
+                      <img src={p.storage_path} alt={p.uploader_name || 'foto'} loading="lazy" />
+                      {polaroid ? (
+                        (capTitle || capSub) ? (
+                          <div className="m-pola-cap">
+                            {capTitle ? <div className="m-pola-title">{capTitle}</div> : null}
+                            {capSub ? <div className="m-pola-sub">{capSub}</div> : null}
+                          </div>
+                        ) : null
+                      ) : (
+                        p.uploader_name ? <span className="m-chip">{p.uploader_name}</span> : null
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             </div>
           </>

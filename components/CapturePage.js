@@ -74,7 +74,7 @@ export default function CapturePage({ albumId }) {
 
     async function load() {
       try {
-        const res = await fetch(`/api/albums/${albumId}`)
+        const res = await fetch(`/api/albums/${albumId}`, { cache: 'no-store' })
         if (res.ok) {
           setAlbum(await res.json())
           const pr = await fetch(`/api/albums/${albumId}/photos?guest_id=${encodeURIComponent(gid)}`)
