@@ -209,7 +209,7 @@ export default function Admin() {
               </div>
               <div className="album-actions">
                 <Link className="btn-sm solid" href={`/a/${a.id}/kelola`}>Kelola</Link>
-                <Link className="btn-sm" href={`/a/${a.id}/galeri`}>Galeri</Link>
+                <Link className="btn-sm" href={`/a/${a.id}/semua`}>Galeri</Link>
               </div>
             </div>
           ))
