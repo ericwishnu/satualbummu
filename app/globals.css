@@ -468,6 +468,7 @@ input::placeholder { color: #6b6b70; }
   justify-content: center;
   gap: 10px;
   height: 58px;
+  margin: 0;
   padding: 0 18px;
   border-radius: 14px;
   border: none;
